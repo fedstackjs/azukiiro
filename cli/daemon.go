@@ -5,9 +5,9 @@ import (
 	"log"
 	"time"
 
+	"github.com/fedstackjs/azukiiro/client"
+	"github.com/fedstackjs/azukiiro/judge"
 	"github.com/spf13/cobra"
-	"github.com/zhzxdev/azukiiro/client"
-	"github.com/zhzxdev/azukiiro/judge"
 )
 
 type daemonArgs struct {

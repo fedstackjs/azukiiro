@@ -1,0 +1,14 @@
+{
+  "name": "azukiiro",
+  "packageManager": "yarn@4.0.2",
+  "devDependencies": {
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3",
+    "vitepress": "^1.0.0-rc.39"
+  },
+  "scripts": {
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  }
+}

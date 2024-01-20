@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/zhzxdev/azukiiro/client"
-	"github.com/zhzxdev/azukiiro/common"
-	"github.com/zhzxdev/azukiiro/judge/adapter"
-	"github.com/zhzxdev/azukiiro/storage"
+	"github.com/fedstackjs/azukiiro/client"
+	"github.com/fedstackjs/azukiiro/common"
+	"github.com/fedstackjs/azukiiro/judge/adapter"
+	"github.com/fedstackjs/azukiiro/storage"
 )
 
 func judge(ctx context.Context, res *client.PollSolutionResponse) error {

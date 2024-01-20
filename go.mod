@@ -1,4 +1,4 @@
-module github.com/zhzxdev/azukiiro
+module github.com/fedstackjs/azukiiro
 
 go 1.21
 

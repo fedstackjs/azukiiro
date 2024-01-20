@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/zhzxdev/azukiiro/client"
-	"github.com/zhzxdev/azukiiro/common"
+	"github.com/fedstackjs/azukiiro/client"
+	"github.com/fedstackjs/azukiiro/common"
 )
 
 type DummyConfig struct {

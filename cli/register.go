@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/zhzxdev/azukiiro/client"
-	"github.com/zhzxdev/azukiiro/common"
+	"github.com/fedstackjs/azukiiro/client"
+	"github.com/fedstackjs/azukiiro/common"
 )
 
 type registerArgs struct {

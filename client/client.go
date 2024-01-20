@@ -3,9 +3,9 @@ package client
 import (
 	"log"
 
+	"github.com/fedstackjs/azukiiro/common"
 	"github.com/go-resty/resty/v2"
 	"github.com/spf13/viper"
-	"github.com/zhzxdev/azukiiro/common"
 )
 
 var http = resty.New()

@@ -5,9 +5,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/zhzxdev/azukiiro/client"
-	"github.com/zhzxdev/azukiiro/db"
-	"github.com/zhzxdev/azukiiro/ranker"
+	"github.com/fedstackjs/azukiiro/client"
+	"github.com/fedstackjs/azukiiro/db"
+	"github.com/fedstackjs/azukiiro/ranker"
 
 	"github.com/spf13/cobra"
 )

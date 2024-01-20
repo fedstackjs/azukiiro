@@ -1,2 +1,12 @@
 .vscode
 /build
+
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+.pnp.*
+
+docs/.vitepress/dist
+docs/.vitepress/cache

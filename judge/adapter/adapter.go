@@ -3,9 +3,9 @@ package adapter
 import (
 	"context"
 
-	"github.com/zhzxdev/azukiiro/common"
-	"github.com/zhzxdev/azukiiro/judge/adapter/dummy"
-	"github.com/zhzxdev/azukiiro/judge/adapter/uoj"
+	"github.com/fedstackjs/azukiiro/common"
+	"github.com/fedstackjs/azukiiro/judge/adapter/dummy"
+	"github.com/fedstackjs/azukiiro/judge/adapter/uoj"
 )
 
 type JudgeAdapter interface {
