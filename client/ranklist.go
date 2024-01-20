@@ -31,8 +31,9 @@ func LoadRanklistCtx(ctx context.Context) (string, string) {
 }
 
 type RanklistSettings struct {
-	ShowAfter  int `json:"showAfter"`
-	ShowBefore int `json:"showBefore"`
+	ShowAfter  int    `json:"showAfter"`
+	ShowBefore int    `json:"showBefore"`
+	Config     string `json:"config"`
 }
 
 type RanklistDTO struct {
@@ -45,9 +46,10 @@ type PollRanklistRequest struct {
 }
 
 type PollRanklistResponse struct {
-	TaskId    string        `json:"taskId"`
-	ContestId string        `json:"contestId"`
-	Ranklists []RanklistDTO `json:"ranklists"`
+	TaskId            string        `json:"taskId"`
+	ContestId         string        `json:"contestId"`
+	Ranklists         []RanklistDTO `json:"ranklists"`
+	RanklistUpdatedAt int           `json:"ranklistUpdatedAt"`
 }
 
 func PollRanklist(ctx context.Context, req *PollRanklistRequest) (*PollRanklistResponse, error) {
@@ -152,7 +154,7 @@ func SaveRanklist(ctx context.Context, ranklist map[string]*Ranklist) error {
 }
 
 type CompleteRanklistTaskRequest struct {
-	RanklistLastSolutionId string `json:"ranklistLastSolutionId"`
+	RanklistUpdatedAt int `json:"ranklistUpdatedAt"`
 }
 
 func CompleteRanklistTask(ctx context.Context, req *CompleteRanklistTaskRequest) error {
@@ -183,12 +185,13 @@ type GetRanklistSolutionsResponse []struct {
 	CompletedAt      int                `json:"completedAt"`
 }
 
-func GetRanklistSolutions(ctx context.Context, since int) (*GetRanklistSolutionsResponse, error) {
+func GetRanklistSolutions(ctx context.Context, since int, lastId string) (*GetRanklistSolutionsResponse, error) {
 	taskId, contestId := LoadRanklistCtx(ctx)
 	res := &GetRanklistSolutionsResponse{}
 	raw, err := http.R().
 		SetContext(ctx).
 		SetQueryParam("since", fmt.Sprint(since)).
+		SetQueryParam("lastId", lastId).
 		SetResult(res).
 		Get("/api/runner/ranklist/task/" + contestId + "/" + taskId + "/solutions")
 	err = loadError(raw, err)
@@ -215,12 +218,13 @@ type GetRanklistParticipantsResponse []struct {
 	UpdatedAt int `json:"updatedAt" bson:"updatedAt"`
 }
 
-func GetRanklistParticipants(ctx context.Context, since int) (*GetRanklistParticipantsResponse, error) {
+func GetRanklistParticipants(ctx context.Context, since int, lastId string) (*GetRanklistParticipantsResponse, error) {
 	taskId, contestId := LoadRanklistCtx(ctx)
 	res := &GetRanklistParticipantsResponse{}
 	raw, err := http.R().
 		SetContext(ctx).
 		SetQueryParam("since", fmt.Sprint(since)).
+		SetQueryParam("lastId", lastId).
 		SetResult(res).
 		Get("/api/runner/ranklist/task/" + contestId + "/" + taskId + "/participants")
 	err = loadError(raw, err)

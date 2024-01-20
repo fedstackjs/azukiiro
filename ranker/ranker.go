@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"sort"
-	"time"
 
 	"github.com/fedstackjs/azukiiro/client"
 	"github.com/fedstackjs/azukiiro/db"
@@ -57,19 +56,21 @@ func Poll(ctx context.Context) (bool, error) {
 	ctx = client.WithRanklistTask(ctx, res.TaskId, res.ContestId)
 	// Sync solution list
 	collection := db.Collection(ctx, fmt.Sprintf("contest-%v-participants", res.ContestId))
-	now := time.Now().UnixMicro()
+	now := res.RanklistUpdatedAt
 	since := 0
+	lastId := ""
 	participant := &Participant{}
-	err = collection.FindOne(ctx, bson.D{}, options.FindOne().SetSort(bson.D{{Key: "updatedAt", Value: -1}})).Decode(participant)
+	err = collection.FindOne(ctx, bson.D{}, options.FindOne().SetSort(bson.D{{Key: "updatedAt", Value: -1}, {Key: "id", Value: -1}})).Decode(participant)
 	if err != nil {
 		if err != mongo.ErrNoDocuments {
 			return true, err
 		}
 	} else {
 		since = participant.UpdatedAt
+		lastId = participant.Id
 	}
 	for {
-		res, err := client.GetRanklistParticipants(ctx, since)
+		res, err := client.GetRanklistParticipants(ctx, since, lastId)
 		if err != nil {
 			return true, err
 		}
@@ -85,6 +86,7 @@ func Poll(ctx context.Context) (bool, error) {
 		}
 		last := (*res)[len(*res)-1]
 		since = last.UpdatedAt
+		lastId = last.Id
 		if since >= int(now) {
 			break
 		}
@@ -187,6 +189,11 @@ func Poll(ctx context.Context) (bool, error) {
 		ranklistMap[value.Key] = ranklist
 	}
 	if err = client.SaveRanklist(ctx, ranklistMap); err != nil {
+		return true, err
+	}
+	if err = client.CompleteRanklistTask(ctx, &client.CompleteRanklistTaskRequest{
+		RanklistUpdatedAt: now,
+	}); err != nil {
 		return true, err
 	}
 	return true, nil
