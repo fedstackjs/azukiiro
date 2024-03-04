@@ -135,6 +135,8 @@ func (g *GlueAdapter) Judge(ctx context.Context, config common.ProblemConfig, pr
 	cmd.Env = append(cmd.Env, "GLUE_SOLUTION_DATA="+solutionData)
 	cmd.Env = append(cmd.Env, "GLUE_REPORT="+reportPath)
 	cmd.Env = append(cmd.Env, "GLUE_DETAILS="+detailsPath)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	cmdErr := cmd.Run()
 
 	detailsJson, err = os.ReadFile(detailsPath)
