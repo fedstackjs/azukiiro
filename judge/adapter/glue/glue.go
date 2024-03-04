@@ -131,6 +131,7 @@ func (g *GlueAdapter) Judge(ctx context.Context, config common.ProblemConfig, pr
 	defer cancel()
 	cmd := exec.CommandContext(execCtx, adapterConfig.Command[0], adapterConfig.Command[1:]...)
 	cmd.Dir = dir
+	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, "GLUE_PROBLEM_DATA="+problemData)
 	cmd.Env = append(cmd.Env, "GLUE_SOLUTION_DATA="+solutionData)
 	cmd.Env = append(cmd.Env, "GLUE_REPORT="+reportPath)
