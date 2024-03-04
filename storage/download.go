@@ -6,19 +6,19 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
 func GetRootPath() string {
 	result, err := filepath.Abs(viper.GetString("storagePath"))
 	if err != nil {
-		log.Fatalln("Failed to get storage path:", err)
+		logrus.Fatalln("Failed to get storage path:", err)
 	}
 	return result
 }
@@ -32,14 +32,14 @@ func GetCachePath() string {
 }
 
 func Initialize() {
-	log.Println("Storage root path:", GetRootPath())
+	logrus.Println("Storage root path:", GetRootPath())
 	err := os.MkdirAll(GetTmpPath(), 0700)
 	if err != nil {
-		log.Fatalln("Failed to create tmp dir:", err)
+		logrus.Fatalln("Failed to create tmp dir:", err)
 	}
 	err = os.MkdirAll(GetCachePath(), 0700)
 	if err != nil {
-		log.Fatalln("Failed to create cache dir:", err)
+		logrus.Fatalln("Failed to create cache dir:", err)
 	}
 }
 
@@ -75,7 +75,7 @@ func DownloadFile(ctx context.Context, url string, hash string) error {
 	if err != nil {
 		return err
 	}
-	log.Println("Downloaded", n, "bytes")
+	logrus.Println("Downloaded", n, "bytes")
 
 	_, err = file.Seek(0, io.SeekStart)
 	if err != nil {
@@ -89,7 +89,7 @@ func DownloadFile(ctx context.Context, url string, hash string) error {
 	}
 	fileHash := hex.EncodeToString(hasher.Sum(nil))
 	if fileHash != hash {
-		log.Println("Hash mismatch:", fileHash, "!=", hash)
+		logrus.Println("Hash mismatch:", fileHash, "!=", hash)
 		return fmt.Errorf("file hash mismatch")
 	}
 
@@ -100,7 +100,7 @@ func DownloadFile(ctx context.Context, url string, hash string) error {
 }
 
 func PrepareFile(ctx context.Context, url string, hash string) (string, error) {
-	log.Println("Preparing file:", url, hash)
+	logrus.Println("Preparing file:", url, hash)
 	cachePath := GetCachePath()
 	filePath := path.Join(cachePath, hash)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -109,7 +109,7 @@ func PrepareFile(ctx context.Context, url string, hash string) (string, error) {
 		for retry > 0 {
 			err := DownloadFile(ctx, url, hash)
 			if err != nil {
-				log.Println("Failed to download file:", err)
+				logrus.Println("Failed to download file:", err)
 				retry--
 				continue
 			}

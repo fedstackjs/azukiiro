@@ -9,7 +9,7 @@ import (
 )
 
 type PatchSolutionTaskRequest struct {
-	Score   int                 `json:"score"`
+	Score   float64             `json:"score"`
 	Metrics *map[string]float64 `json:"metrics,omitempty"`
 	Status  string              `json:"status"`
 	Message string              `json:"message"`

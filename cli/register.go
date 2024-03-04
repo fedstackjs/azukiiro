@@ -2,10 +2,10 @@ package cli
 
 import (
 	"context"
-	"log"
 	"os"
 	"strings"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -27,12 +27,12 @@ func splitLabels(input string) []string {
 
 func runRegister(ctx context.Context, regArgs *registerArgs) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		log.Println("Registering runner")
-		log.Println("ServerAddr:", regArgs.ServerAddr)
+		logrus.Println("Registering runner")
+		logrus.Println("ServerAddr:", regArgs.ServerAddr)
 
 		runnerKey := viper.GetString("runnerKey")
 		if runnerKey != "" && !regArgs.Force {
-			log.Println("Runner already registered, exiting...")
+			logrus.Println("Runner already registered, exiting...")
 			return nil
 		}
 
@@ -44,7 +44,7 @@ func runRegister(ctx context.Context, regArgs *registerArgs) func(*cobra.Command
 		if regArgs.Name == "" {
 			name, err := os.Hostname()
 			if err != nil {
-				log.Fatalln(err)
+				logrus.Fatalln(err)
 			}
 			regArgs.Name = name
 		}
@@ -63,15 +63,15 @@ func runRegister(ctx context.Context, regArgs *registerArgs) func(*cobra.Command
 		res, err := client.Register(ctx, req)
 
 		if err != nil {
-			log.Fatalln(err)
+			logrus.Fatalln(err)
 		}
 
-		log.Println("RunnerId:", res.RunnerId)
+		logrus.Println("RunnerId:", res.RunnerId)
 		viper.Set("runnerId", res.RunnerId)
 		viper.Set("runnerKey", res.RunnerKey)
 		viper.WriteConfig()
 
-		log.Println("Runner registered successfully")
+		logrus.Println("Runner registered successfully")
 
 		return nil
 	}

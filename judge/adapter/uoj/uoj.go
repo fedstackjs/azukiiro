@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"slices"
@@ -13,6 +12,7 @@ import (
 	"github.com/fedstackjs/azukiiro/client"
 	"github.com/fedstackjs/azukiiro/common"
 	"github.com/fedstackjs/azukiiro/storage"
+	"github.com/sirupsen/logrus"
 )
 
 type UojAdapter struct{}
@@ -22,7 +22,7 @@ func (u *UojAdapter) Name() string {
 }
 
 func Unzip(source string, target string) (string, error) {
-	log.Printf("Unzipping %s to %s\n", source, target)
+	logrus.Printf("Unzipping %s to %s\n", source, target)
 	dir, err := storage.MkdirTemp(target)
 	if err != nil {
 		return dir, err
@@ -30,14 +30,14 @@ func Unzip(source string, target string) (string, error) {
 	err = exec.Command("unzip", source, "-d", dir).Run()
 	if err != nil {
 		os.RemoveAll(dir)
-		log.Println("Error unzipping", source, ":", err)
+		logrus.Println("Error unzipping", source, ":", err)
 		return dir, fmt.Errorf("failed to extract solution")
 	}
 	// remove all symlinks to avoid security issues
 	err = exec.Command("find", dir, "-type", "l", "-delete").Run()
 	if err != nil {
 		os.RemoveAll(dir)
-		log.Println("Error removing symlinks in", dir, ":", err)
+		logrus.Println("Error removing symlinks in", dir, ":", err)
 		return dir, fmt.Errorf("failed to extract solution")
 	}
 	return dir, nil
@@ -126,7 +126,7 @@ func ReadResult(resultPath string) (client.PatchSolutionTaskRequest, common.Solu
 		}
 	}
 	return client.PatchSolutionTaskRequest{
-			Score: result.Score,
+			Score: float64(result.Score),
 			Metrics: &map[string]float64{
 				"cpu": float64(result.Time),
 				"mem": float64(result.Memory),
@@ -221,7 +221,7 @@ func (u *UojAdapter) Judge(ctx context.Context, config common.ProblemConfig, pro
 		return fmt.Errorf("unknown sandbox mode: %s", adapterConfig.SandboxMode)
 	}
 	cmd.Dir = judgerPath
-	log.Printf("Running %s\n", cmd)
+	logrus.Printf("Running %s\n", cmd)
 	if err := cmd.Run(); err != nil {
 		return err
 	}

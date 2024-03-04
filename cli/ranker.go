@@ -2,12 +2,12 @@ package cli
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/fedstackjs/azukiiro/client"
 	"github.com/fedstackjs/azukiiro/db"
 	"github.com/fedstackjs/azukiiro/ranker"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
 )
@@ -18,7 +18,7 @@ type rankerArgs struct {
 
 func runRanker(ctx context.Context, rankerArgs *rankerArgs) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		log.Println("Starting ranker")
+		logrus.Println("Starting ranker")
 		ctx, cleanup := db.WithMongo(ctx)
 		defer cleanup()
 
@@ -26,7 +26,7 @@ func runRanker(ctx context.Context, rankerArgs *rankerArgs) func(*cobra.Command,
 		for {
 			cont, err := ranker.Poll(ctx)
 			if err != nil {
-				log.Println("Error:", err)
+				logrus.Println("Error:", err)
 			}
 			waitDur := time.Duration(0)
 			if !cont {

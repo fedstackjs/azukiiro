@@ -2,8 +2,8 @@ package db
 
 import (
 	"context"
-	"log"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -17,11 +17,11 @@ const injectionKey dbInjectionKey = iota
 func WithMongo(ctx context.Context) (context.Context, func()) {
 	dbAddr := viper.GetString("dbAddr")
 	if dbAddr == "" {
-		log.Fatalln("MongoDB address not set")
+		logrus.Fatalln("MongoDB address not set")
 	}
 	mongo, err := mongo.Connect(ctx, options.Client().ApplyURI(dbAddr))
 	if err != nil {
-		log.Fatalln(err)
+		logrus.Fatalln(err)
 	}
 	return context.WithValue(ctx, injectionKey, mongo), func() {
 		if err := mongo.Disconnect(context.Background()); err != nil {

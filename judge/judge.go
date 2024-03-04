@@ -3,12 +3,12 @@ package judge
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/fedstackjs/azukiiro/client"
 	"github.com/fedstackjs/azukiiro/common"
 	"github.com/fedstackjs/azukiiro/judge/adapter"
 	"github.com/fedstackjs/azukiiro/storage"
+	"github.com/sirupsen/logrus"
 )
 
 func judge(ctx context.Context, res *client.PollSolutionResponse) error {
@@ -71,18 +71,18 @@ func Poll(ctx context.Context) (bool, error) {
 		return true, nil
 	}
 
-	log.Println("Got task:", res.TaskId)
-	log.Println("SolutionId:", res.SolutionId)
+	logrus.Println("Got task:", res.TaskId)
+	logrus.Println("SolutionId:", res.SolutionId)
 
 	err = judge(ctx, res)
 	if err != nil {
-		log.Println("Judge finished with error:", err)
+		logrus.Println("Judge finished with error:", err)
 		err = client.SaveSolutionDetails(ctx, &common.SolutionDetails{
 			Jobs:    []*common.SolutionDetailsJob{},
 			Summary: fmt.Sprintf("An Error has occurred:\n\n```\n%s\n```", err),
 		})
 		if err != nil {
-			log.Println("Save details failed:", err)
+			logrus.Println("Save details failed:", err)
 		}
 		err = client.PatchSolutionTask(ctx, &client.PatchSolutionTaskRequest{
 			Score:   0,
@@ -90,14 +90,14 @@ func Poll(ctx context.Context) (bool, error) {
 			Message: "Judge error",
 		})
 		if err != nil {
-			log.Println("Patch task failed:", err)
+			logrus.Println("Patch task failed:", err)
 		}
 	} else {
-		log.Println("Judge finished")
+		logrus.Println("Judge finished")
 	}
 	err = client.CompleteSolutionTask(ctx)
 	if err != nil {
-		log.Println("Complete task failed:", err)
+		logrus.Println("Complete task failed:", err)
 	}
 
 	return true, nil

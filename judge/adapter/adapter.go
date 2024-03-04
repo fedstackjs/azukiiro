@@ -5,6 +5,7 @@ import (
 
 	"github.com/fedstackjs/azukiiro/common"
 	"github.com/fedstackjs/azukiiro/judge/adapter/dummy"
+	"github.com/fedstackjs/azukiiro/judge/adapter/glue"
 	"github.com/fedstackjs/azukiiro/judge/adapter/uoj"
 )
 
@@ -27,4 +28,5 @@ func Get(name string) (JudgeAdapter, bool) {
 func init() {
 	Register(&dummy.DummyAdapter{})
 	Register(&uoj.UojAdapter{})
+	Register(&glue.GlueAdapter{})
 }

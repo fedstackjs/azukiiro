@@ -3,11 +3,11 @@ package ranker
 import (
 	"context"
 	"fmt"
-	"log"
 	"sort"
 
 	"github.com/fedstackjs/azukiiro/client"
 	"github.com/fedstackjs/azukiiro/db"
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -142,7 +142,7 @@ func Poll(ctx context.Context) (bool, error) {
 	ranklistMap := make(map[string]*client.Ranklist)
 	for _, value := range res.Ranklists {
 		// Currently there is no settings associated with ranklist, which is subject to change
-		log.Println("Processing ranklist: ", value.Key)
+		logrus.Println("Processing ranklist: ", value.Key)
 		rank := 0
 		var items []*client.RanklistParticipantItem
 		for _, participant := range participants {
