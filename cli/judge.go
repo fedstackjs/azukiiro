@@ -41,7 +41,7 @@ func (t *localJudgeTask) Update(ctx context.Context, update *common.SolutionInfo
 	if err != nil {
 		logrus.Warnf("Failed to marshal update: %v", err)
 	}
-	logrus.Infof("Update: \n%s\n", str)
+	logrus.Infof("Update: \n%s\n\n", str)
 	return nil
 }
 
@@ -50,7 +50,7 @@ func (t *localJudgeTask) UploadDetails(ctx context.Context, details *common.Solu
 	if err != nil {
 		logrus.Warnf("Failed to marshal details: %v", err)
 	}
-	logrus.Infof("Details: \n%s\n", str)
+	logrus.Infof("Details: \n%s\n\n", str)
 	return nil
 }
 
