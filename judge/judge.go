@@ -43,7 +43,7 @@ func judge(ctx context.Context, res *client.PollSolutionResponse) error {
 			Message: "Judge adapter not found",
 		})
 	}
-	task := &judgeTask{
+	task := &RemoteJudgeTask{
 		config:       res.ProblemConfig,
 		problemData:  problemData,
 		solutionData: solutionData,

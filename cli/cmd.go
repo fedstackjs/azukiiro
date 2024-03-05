@@ -65,6 +65,7 @@ func Execute(ctx context.Context) {
 		Args:  cobra.MaximumNArgs(0),
 		RunE:  runDaemon(ctx, &daemonArgs),
 	}
+	daemonCmd.Flags().IntVar(&daemonArgs.concurrency, "concurrency", 1, "Concurrency")
 	daemonCmd.Flags().Float32Var(&daemonArgs.pollInterval, "poll-interval", 1, "Poll interval in seconds")
 	rootCmd.AddCommand(daemonCmd)
 

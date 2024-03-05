@@ -34,28 +34,30 @@ func GetAdapter(name string) (JudgeAdapter, bool) {
 	return adapter, ok
 }
 
-type judgeTask struct {
+type RemoteJudgeTask struct {
 	config       common.ProblemConfig
 	problemData  string
 	solutionData string
+	solutionId   string
+	taskId       string
 }
 
-func (t *judgeTask) Config() common.ProblemConfig {
+func (t *RemoteJudgeTask) Config() common.ProblemConfig {
 	return t.config
 }
 
-func (t *judgeTask) ProblemData() string {
+func (t *RemoteJudgeTask) ProblemData() string {
 	return t.problemData
 }
 
-func (t *judgeTask) SolutionData() string {
+func (t *RemoteJudgeTask) SolutionData() string {
 	return t.solutionData
 }
 
-func (t *judgeTask) Update(ctx context.Context, update *common.SolutionInfo) error {
+func (t *RemoteJudgeTask) Update(ctx context.Context, update *common.SolutionInfo) error {
 	return client.PatchSolutionTask(ctx, update)
 }
 
-func (t *judgeTask) UploadDetails(ctx context.Context, details *common.SolutionDetails) error {
+func (t *RemoteJudgeTask) UploadDetails(ctx context.Context, details *common.SolutionDetails) error {
 	return client.SaveSolutionDetails(ctx, details)
 }
