@@ -37,12 +37,20 @@ func (t *localJudgeTask) SolutionData() string {
 }
 
 func (t *localJudgeTask) Update(ctx context.Context, update *common.SolutionInfo) error {
-	logrus.Infof("Update: %+v", update)
+	str, err := json.MarshalIndent(update, "", "  ")
+	if err != nil {
+		logrus.Warnf("Failed to marshal update: %v", err)
+	}
+	logrus.Infof("Update: \n%s\n", str)
 	return nil
 }
 
 func (t *localJudgeTask) UploadDetails(ctx context.Context, details *common.SolutionDetails) error {
-	logrus.Infof("UploadDetails: %+v", details)
+	str, err := json.MarshalIndent(details, "", "  ")
+	if err != nil {
+		logrus.Warnf("Failed to marshal details: %v", err)
+	}
+	logrus.Infof("Details: \n%s\n", str)
 	return nil
 }
 
