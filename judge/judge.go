@@ -6,13 +6,12 @@ import (
 
 	"github.com/fedstackjs/azukiiro/client"
 	"github.com/fedstackjs/azukiiro/common"
-	"github.com/fedstackjs/azukiiro/judge/adapter"
 	"github.com/fedstackjs/azukiiro/storage"
 	"github.com/sirupsen/logrus"
 )
 
 func judge(ctx context.Context, res *client.PollSolutionResponse) error {
-	err := client.PatchSolutionTask(ctx, &client.PatchSolutionTaskRequest{
+	err := client.PatchSolutionTask(ctx, &common.SolutionInfo{
 		Score:   0,
 		Status:  "Running",
 		Message: "Preparing solution",
@@ -28,7 +27,7 @@ func judge(ctx context.Context, res *client.PollSolutionResponse) error {
 	if err != nil {
 		return err
 	}
-	err = client.PatchSolutionTask(ctx, &client.PatchSolutionTaskRequest{
+	err = client.PatchSolutionTask(ctx, &common.SolutionInfo{
 		Score:   0,
 		Status:  "Running",
 		Message: "Judging",
@@ -36,15 +35,20 @@ func judge(ctx context.Context, res *client.PollSolutionResponse) error {
 	if err != nil {
 		return err
 	}
-	adapter, ok := adapter.Get(res.ProblemConfig.Judge.Adapter)
+	adapter, ok := GetAdapter(res.ProblemConfig.Judge.Adapter)
 	if !ok {
-		return client.PatchSolutionTask(ctx, &client.PatchSolutionTaskRequest{
+		return client.PatchSolutionTask(ctx, &common.SolutionInfo{
 			Score:   0,
 			Status:  "Error",
 			Message: "Judge adapter not found",
 		})
 	}
-	return adapter.Judge(ctx, res.ProblemConfig, problemData, solutionData)
+	task := &judgeTask{
+		config:       res.ProblemConfig,
+		problemData:  problemData,
+		solutionData: solutionData,
+	}
+	return adapter.Judge(ctx, task)
 }
 
 func Poll(ctx context.Context) (bool, error) {
@@ -62,7 +66,7 @@ func Poll(ctx context.Context) (bool, error) {
 
 	if res.ErrMsg != "" {
 		// Server side error occurred
-		client.PatchSolutionTask(ctx, &client.PatchSolutionTaskRequest{
+		client.PatchSolutionTask(ctx, &common.SolutionInfo{
 			Score:   0,
 			Status:  "Error",
 			Message: "Server side error occurred",
@@ -84,7 +88,7 @@ func Poll(ctx context.Context) (bool, error) {
 		if err != nil {
 			logrus.Println("Save details failed:", err)
 		}
-		err = client.PatchSolutionTask(ctx, &client.PatchSolutionTaskRequest{
+		err = client.PatchSolutionTask(ctx, &common.SolutionInfo{
 			Score:   0,
 			Status:  "Error",
 			Message: "Judge error",

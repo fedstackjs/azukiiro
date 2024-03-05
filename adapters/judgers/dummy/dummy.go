@@ -4,9 +4,13 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/fedstackjs/azukiiro/client"
 	"github.com/fedstackjs/azukiiro/common"
+	"github.com/fedstackjs/azukiiro/judge"
 )
+
+func init() {
+	judge.RegisterAdapter(&DummyAdapter{})
+}
 
 type DummyConfig struct {
 	Ping string `json:"ping"`
@@ -18,10 +22,12 @@ func (d *DummyAdapter) Name() string {
 	return "dummy"
 }
 
-func (d *DummyAdapter) Judge(ctx context.Context, config common.ProblemConfig, problemData string, solutionData string) error {
+func (d *DummyAdapter) Judge(ctx context.Context, task judge.JudgeTask) error {
+	config := task.Config()
+
 	adapterConfig := DummyConfig{}
 	json.Unmarshal(config.Judge.Config, &adapterConfig)
-	client.PatchSolutionTask(ctx, &client.PatchSolutionTaskRequest{
+	task.Update(ctx, &common.SolutionInfo{
 		Score: 100,
 		Metrics: &map[string]float64{
 			"cpu": 0,
@@ -30,7 +36,7 @@ func (d *DummyAdapter) Judge(ctx context.Context, config common.ProblemConfig, p
 		Status:  "AC",
 		Message: "Well Done! Accepted",
 	})
-	client.SaveSolutionDetails(ctx, &common.SolutionDetails{
+	task.UploadDetails(ctx, &common.SolutionDetails{
 		Jobs: []*common.SolutionDetailsJob{
 			{
 				Name:       "Group 1",

@@ -20,3 +20,10 @@ type SolutionDetails struct {
 	Jobs    []*SolutionDetailsJob `json:"jobs"`
 	Summary string                `json:"summary"`
 }
+
+type SolutionInfo struct {
+	Score   float64             `json:"score"`
+	Metrics *map[string]float64 `json:"metrics,omitempty"`
+	Status  string              `json:"status"`
+	Message string              `json:"message"`
+}

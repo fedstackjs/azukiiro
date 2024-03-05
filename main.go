@@ -5,6 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	_ "github.com/fedstackjs/azukiiro/adapters"
 	"github.com/fedstackjs/azukiiro/cli"
 )
 

@@ -8,13 +8,6 @@ import (
 	"github.com/fedstackjs/azukiiro/storage"
 )
 
-type PatchSolutionTaskRequest struct {
-	Score   float64             `json:"score"`
-	Metrics *map[string]float64 `json:"metrics,omitempty"`
-	Status  string              `json:"status"`
-	Message string              `json:"message"`
-}
-
 // Context helpers
 type taskContextKey int
 
@@ -75,7 +68,7 @@ func SaveSolutionDetails(ctx context.Context, details *common.SolutionDetails) e
 	return storage.Upload(ctx, url, str)
 }
 
-func PatchSolutionTask(ctx context.Context, req *PatchSolutionTaskRequest) error {
+func PatchSolutionTask(ctx context.Context, req *common.SolutionInfo) error {
 	solutionId, taskId := LoadSolutionTask(ctx)
 	raw, err := http.R().
 		SetContext(ctx).

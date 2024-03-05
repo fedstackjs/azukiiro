@@ -9,11 +9,15 @@ import (
 	"os/exec"
 	"slices"
 
-	"github.com/fedstackjs/azukiiro/client"
 	"github.com/fedstackjs/azukiiro/common"
+	"github.com/fedstackjs/azukiiro/judge"
 	"github.com/fedstackjs/azukiiro/storage"
 	"github.com/sirupsen/logrus"
 )
+
+func init() {
+	judge.RegisterAdapter(&UojAdapter{})
+}
 
 type UojAdapter struct{}
 
@@ -72,11 +76,11 @@ func toCodeBlock(v interface{}) string {
 	return fmt.Sprintf("```\n%s\n```", v)
 }
 
-func ReadResult(resultPath string) (client.PatchSolutionTaskRequest, common.SolutionDetails, error) {
+func ReadResult(resultPath string) (common.SolutionInfo, common.SolutionDetails, error) {
 	// read result
 	resultFile, err := os.ReadFile(resultPath)
 	if err != nil {
-		return client.PatchSolutionTaskRequest{
+		return common.SolutionInfo{
 				Score: 0,
 				Metrics: &map[string]float64{
 					"cpu": 0,
@@ -93,7 +97,7 @@ func ReadResult(resultPath string) (client.PatchSolutionTaskRequest, common.Solu
 	// unmarshal XML
 	var result Result
 	if err := xml.Unmarshal(resultFile, &result); err != nil {
-		return client.PatchSolutionTaskRequest{
+		return common.SolutionInfo{
 				Score: 0,
 				Metrics: &map[string]float64{
 					"cpu": 0,
@@ -125,7 +129,7 @@ func ReadResult(resultPath string) (client.PatchSolutionTaskRequest, common.Solu
 			})
 		}
 	}
-	return client.PatchSolutionTaskRequest{
+	return common.SolutionInfo{
 			Score: float64(result.Score),
 			Metrics: &map[string]float64{
 				"cpu": float64(result.Time),
@@ -156,7 +160,11 @@ type SolutionMetadata struct {
 	Language string `json:"language"`
 }
 
-func (u *UojAdapter) Judge(ctx context.Context, config common.ProblemConfig, problemData string, solutionData string) error {
+func (u *UojAdapter) Judge(ctx context.Context, task judge.JudgeTask) error {
+	config := task.Config()
+	problemData := task.ProblemData()
+	solutionData := task.SolutionData()
+
 	adapterConfig := UOJAdapterConfig{
 		SandboxMode: "bwrap",
 	}
@@ -228,8 +236,8 @@ func (u *UojAdapter) Judge(ctx context.Context, config common.ProblemConfig, pro
 
 	// read & report result
 	result, resultDetails, _ := ReadResult(judgerPath + "/result/result.txt")
-	client.PatchSolutionTask(ctx, &result)
-	client.SaveSolutionDetails(ctx, &resultDetails)
+	task.Update(ctx, &result)
+	task.UploadDetails(ctx, &resultDetails)
 
 	return nil
 }

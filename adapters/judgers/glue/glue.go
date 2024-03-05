@@ -12,11 +12,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fedstackjs/azukiiro/client"
 	"github.com/fedstackjs/azukiiro/common"
+	"github.com/fedstackjs/azukiiro/judge"
 	"github.com/fedstackjs/azukiiro/storage"
 	"github.com/sirupsen/logrus"
 )
+
+func init() {
+	judge.RegisterAdapter(&GlueAdapter{})
+}
 
 const (
 	scriptHeader = "#!/bin/bash\n\nset -ex\n\n"
@@ -34,9 +38,9 @@ func (g *GlueAdapter) Name() string {
 	return "glue"
 }
 
-func (g *GlueAdapter) reportHandler(ctx context.Context, pipe *os.File) {
+func (g *GlueAdapter) reportHandler(ctx context.Context, task judge.JudgeTask, pipe *os.File) {
 	reader := bufio.NewReader(pipe)
-	request := client.PatchSolutionTaskRequest{}
+	request := common.SolutionInfo{}
 	for {
 		line, _, err := reader.ReadLine()
 		if err != nil {
@@ -71,14 +75,18 @@ func (g *GlueAdapter) reportHandler(ctx context.Context, pipe *os.File) {
 			}
 			request.Metrics = &metrics
 		case "commit":
-			if err := client.PatchSolutionTask(ctx, &request); err != nil {
+			if err := task.Update(ctx, &request); err != nil {
 				logrus.Warnf("Failed to commit report: %v", err)
 			}
 		}
 	}
 }
 
-func (g *GlueAdapter) Judge(ctx context.Context, config common.ProblemConfig, problemData string, solutionData string) error {
+func (g *GlueAdapter) Judge(ctx context.Context, task judge.JudgeTask) error {
+	config := task.Config()
+	problemData := task.ProblemData()
+	solutionData := task.SolutionData()
+
 	adapterConfig := GlueAdapterConfig{}
 	if err := json.Unmarshal([]byte(config.Judge.Config), &adapterConfig); err != nil {
 		return err
@@ -125,7 +133,7 @@ func (g *GlueAdapter) Judge(ctx context.Context, config common.ProblemConfig, pr
 	}
 	defer pipe.Close()
 
-	go g.reportHandler(ctx, pipe)
+	go g.reportHandler(ctx, task, pipe)
 
 	execCtx, cancel := context.WithTimeout(ctx, time.Duration(adapterConfig.Timeout)*time.Second)
 	defer cancel()
@@ -149,7 +157,7 @@ func (g *GlueAdapter) Judge(ctx context.Context, config common.ProblemConfig, pr
 	}
 
 	if cmdErr != nil {
-		if err := client.PatchSolutionTask(ctx, &client.PatchSolutionTaskRequest{
+		if err := task.Update(ctx, &common.SolutionInfo{
 			Score:   0,
 			Status:  "Judge Error",
 			Message: "Judge process exited abnormally",
@@ -161,7 +169,7 @@ func (g *GlueAdapter) Judge(ctx context.Context, config common.ProblemConfig, pr
 		details.Summary += fmt.Sprintf("Judge process exited abnormally: %v", cmdErr)
 	}
 
-	if err := client.SaveSolutionDetails(ctx, &details); err != nil {
+	if err := task.UploadDetails(ctx, &details); err != nil {
 		logrus.Warnf("Failed to save details: %v", err)
 	}
 
