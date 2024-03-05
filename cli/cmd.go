@@ -60,10 +60,10 @@ func Execute(ctx context.Context) {
 	// ./azukiiro daemon
 	var daemonArgs daemonArgs
 	daemonCmd := &cobra.Command{
-		Use:  "daemon",
-		Long: "Run the daemon",
-		Args: cobra.MaximumNArgs(0),
-		RunE: runDaemon(ctx, &daemonArgs),
+		Use:   "daemon",
+		Short: "Run the daemon",
+		Args:  cobra.MaximumNArgs(0),
+		RunE:  runDaemon(ctx, &daemonArgs),
 	}
 	daemonCmd.Flags().Float32Var(&daemonArgs.pollInterval, "poll-interval", 1, "Poll interval in seconds")
 	rootCmd.AddCommand(daemonCmd)
@@ -71,13 +71,28 @@ func Execute(ctx context.Context) {
 	// ./azukiiro ranker
 	var rankerArgs rankerArgs
 	rankerCmd := &cobra.Command{
-		Use:  "ranker",
-		Long: "Run the ranker",
-		Args: cobra.MaximumNArgs(0),
-		RunE: runRanker(ctx, &rankerArgs),
+		Use:   "ranker",
+		Short: "Run the ranker",
+		Args:  cobra.MaximumNArgs(0),
+		RunE:  runRanker(ctx, &rankerArgs),
 	}
 	rankerCmd.Flags().Float32Var(&rankerArgs.pollInterval, "poll-interval", 1, "Poll interval in seconds")
 	rootCmd.AddCommand(rankerCmd)
+
+	var judgeArgs judgeArgs
+	judgeCmd := &cobra.Command{
+		Use:   "judge",
+		Short: "Run the judge locally",
+		Args:  cobra.MaximumNArgs(0),
+		RunE:  runJudge(ctx, &judgeArgs),
+	}
+	judgeCmd.Flags().StringVar(&judgeArgs.problemConfig, "problem-config", "", "Problem config file")
+	judgeCmd.MarkFlagRequired("problem-config")
+	judgeCmd.Flags().StringVar(&judgeArgs.problemData, "problem-data", "", "Problem data file")
+	judgeCmd.MarkFlagRequired("problem-data")
+	judgeCmd.Flags().StringVar(&judgeArgs.solutionData, "solution-data", "", "Solution data file")
+	judgeCmd.MarkFlagRequired("solution-data")
+	rootCmd.AddCommand(judgeCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
