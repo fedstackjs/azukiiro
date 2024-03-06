@@ -26,6 +26,21 @@ func parallelPoll(ctx context.Context) (*RemoteJudgeTask, bool, error) {
 
 	ctx = client.WithSolutionTask(ctx, res.SolutionId, res.TaskId)
 
+	logrus.Println("Got task:", res.TaskId)
+	logrus.Println("SolutionId:", res.SolutionId)
+
+	task := &RemoteJudgeTask{
+		config:       res.ProblemConfig,
+		problemData:  "",
+		solutionData: "",
+		solutionId:   res.SolutionId,
+		taskId:       res.TaskId,
+	}
+
+	if res.ErrMsg != "" {
+		return task, true, fmt.Errorf("server side error occurred: %s", res.ErrMsg)
+	}
+
 	_, ok := GetAdapter(res.ProblemConfig.Judge.Adapter)
 	if !ok {
 		err := client.PatchSolutionTask(ctx, &common.SolutionInfo{
@@ -33,15 +48,8 @@ func parallelPoll(ctx context.Context) (*RemoteJudgeTask, bool, error) {
 			Status:  "Error",
 			Message: "Judge adapter not found",
 		})
-		return nil, true, err
+		return task, true, err
 	}
-
-	if res.ErrMsg != "" {
-		return nil, true, fmt.Errorf("server side error occurred: %s", res.ErrMsg)
-	}
-
-	logrus.Println("Got task:", res.TaskId)
-	logrus.Println("SolutionId:", res.SolutionId)
 
 	err = client.PatchSolutionTask(ctx, &common.SolutionInfo{
 		Score:   0,
@@ -49,16 +57,16 @@ func parallelPoll(ctx context.Context) (*RemoteJudgeTask, bool, error) {
 		Message: "Preparing solution",
 	})
 	if err != nil {
-		return nil, true, err
+		return task, true, err
 	}
 
-	problemData, err := storage.PrepareFile(ctx, res.ProblemDataUrl, res.ProblemDataHash)
+	task.problemData, err = storage.PrepareFile(ctx, res.ProblemDataUrl, res.ProblemDataHash)
 	if err != nil {
-		return nil, true, err
+		return task, true, err
 	}
-	solutionData, err := storage.PrepareFile(ctx, res.SolutionDataUrl, res.SolutionDataHash)
+	task.solutionData, err = storage.PrepareFile(ctx, res.SolutionDataUrl, res.SolutionDataHash)
 	if err != nil {
-		return nil, true, err
+		return task, true, err
 	}
 
 	err = client.PatchSolutionTask(ctx, &common.SolutionInfo{
@@ -67,16 +75,9 @@ func parallelPoll(ctx context.Context) (*RemoteJudgeTask, bool, error) {
 		Message: "Waiting for judge",
 	})
 	if err != nil {
-		return nil, true, err
+		return task, true, err
 	}
 
-	task := &RemoteJudgeTask{
-		config:       res.ProblemConfig,
-		problemData:  problemData,
-		solutionData: solutionData,
-		solutionId:   res.SolutionId,
-		taskId:       res.TaskId,
-	}
 	return task, true, nil
 }
 
@@ -85,30 +86,36 @@ func ParallelPoller(ctx context.Context, pollInterval float32, queue chan<- *Rem
 	defer stop()
 	for {
 		task, cont, err := parallelPoll(ctx)
-		if err != nil {
-			logrus.Println("Judge skipped with error:", err)
-
-			if err = client.SaveSolutionDetails(ctx, &common.SolutionDetails{
-				Jobs:    []*common.SolutionDetailsJob{},
-				Summary: fmt.Sprintf("An Error has occurred:\n\n```\n%s\n```", err),
-			}); err != nil {
-				logrus.Warnln("Save details failed:", err)
-			}
-
-			if err := client.PatchSolutionTask(ctx, &common.SolutionInfo{
-				Score:   0,
-				Status:  "Error",
-				Message: "Judge error",
-			}); err != nil {
-				logrus.Warnln("Patch task failed:", err)
-			}
-
-			if err := client.CompleteSolutionTask(ctx); err != nil {
-				logrus.Warnln("Complete task failed:", err)
-			}
-		}
 		if task != nil {
-			queue <- task
+			if err != nil {
+				ctx := client.WithSolutionTask(ctx, task.solutionId, task.taskId)
+				logrus.Println("Judge skipped with error:", err)
+
+				if err = client.SaveSolutionDetails(ctx, &common.SolutionDetails{
+					Jobs:    []*common.SolutionDetailsJob{},
+					Summary: fmt.Sprintf("An Error has occurred:\n\n```\n%s\n```", err),
+				}); err != nil {
+					logrus.Warnln("Save details failed:", err)
+				}
+
+				if err := client.PatchSolutionTask(ctx, &common.SolutionInfo{
+					Score:   0,
+					Status:  "Error",
+					Message: "Judge error",
+				}); err != nil {
+					logrus.Warnln("Patch task failed:", err)
+				}
+
+				if err := client.CompleteSolutionTask(ctx); err != nil {
+					logrus.Warnln("Complete task failed:", err)
+				}
+			} else {
+				queue <- task
+			}
+		} else {
+			if err != nil {
+				logrus.Warnln("Failed to poll:", err)
+			}
 		}
 		if cont {
 			continue
