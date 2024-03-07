@@ -18,6 +18,7 @@ type SolutionDetailsJob struct {
 }
 
 type SolutionDetails struct {
+	Version int                   `json:"version"`
 	Jobs    []*SolutionDetailsJob `json:"jobs"`
 	Summary string                `json:"summary"`
 }

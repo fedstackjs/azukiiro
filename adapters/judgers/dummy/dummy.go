@@ -37,6 +37,7 @@ func (d *DummyAdapter) Judge(ctx context.Context, task judge.JudgeTask) error {
 		Message: "Well Done! Accepted",
 	})
 	task.UploadDetails(ctx, &common.SolutionDetails{
+		Version: 1,
 		Jobs: []*common.SolutionDetailsJob{
 			{
 				Name:       "Group 1",

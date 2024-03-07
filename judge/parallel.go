@@ -92,6 +92,7 @@ func ParallelPoller(ctx context.Context, pollInterval float32, queue chan<- *Rem
 				logrus.Println("Judge skipped with error:", err)
 
 				if err = client.SaveSolutionDetails(ctx, &common.SolutionDetails{
+					Version: 1,
 					Jobs:    []*common.SolutionDetailsJob{},
 					Summary: fmt.Sprintf("An Error has occurred:\n\n```\n%s\n```", err),
 				}); err != nil {
@@ -157,6 +158,7 @@ func ParallelJudger(ctx context.Context, queue <-chan *RemoteJudgeTask) {
 		if err != nil {
 			logrus.Println("Judge finished with error:", err)
 			err = client.SaveSolutionDetails(ctx, &common.SolutionDetails{
+				Version: 1,
 				Jobs:    []*common.SolutionDetailsJob{},
 				Summary: fmt.Sprintf("An Error has occurred:\n\n```\n%s\n```", err),
 			})

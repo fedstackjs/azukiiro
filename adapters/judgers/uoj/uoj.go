@@ -89,6 +89,7 @@ func ReadResult(resultPath string) (common.SolutionInfo, common.SolutionDetails,
 				Status:  "Unknown Error",
 				Message: "An unknown error occurred when reading the result",
 			}, common.SolutionDetails{
+				Version: 1,
 				Jobs:    nil,
 				Summary: "Unknown Error",
 			}, err
@@ -106,6 +107,7 @@ func ReadResult(resultPath string) (common.SolutionInfo, common.SolutionDetails,
 				Status:  "Unknown Error",
 				Message: "An unknown error occurred when unmarshaling the result",
 			}, common.SolutionDetails{
+				Version: 1,
 				Jobs:    nil,
 				Summary: "Unknown Error",
 			}, err
@@ -138,6 +140,7 @@ func ReadResult(resultPath string) (common.SolutionInfo, common.SolutionDetails,
 			Status:  status,
 			Message: "UOJ Judger finished with exit code 0",
 		}, common.SolutionDetails{
+			Version: 1,
 			Jobs: []*common.SolutionDetailsJob{
 				{
 					Name:       "default",

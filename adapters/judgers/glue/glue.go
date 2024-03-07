@@ -111,6 +111,7 @@ func (g *GlueAdapter) Judge(ctx context.Context, task judge.JudgeTask) error {
 
 	detailsPath := filepath.Join(dir, "details.json")
 	details := common.SolutionDetails{
+		Version: 1,
 		Jobs:    []*common.SolutionDetailsJob{},
 		Summary: "",
 	}

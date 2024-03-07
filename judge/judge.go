@@ -82,6 +82,7 @@ func Poll(ctx context.Context) (bool, error) {
 	if err != nil {
 		logrus.Println("Judge finished with error:", err)
 		err = client.SaveSolutionDetails(ctx, &common.SolutionDetails{
+			Version: 1,
 			Jobs:    []*common.SolutionDetailsJob{},
 			Summary: fmt.Sprintf("An Error has occurred:\n\n```\n%s\n```", err),
 		})
