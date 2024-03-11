@@ -60,7 +60,7 @@ func parseScore(info string) float64 {
 
 func generateVjMd(solution VjSolution) string {
 	// Convert the Unix timestamp (milliseconds) to a readable datetime string in local timezone
-	submitTime := time.UnixMilli(solution.SubmitTime).Format("1926-08-17 01:02:03")
+	submitTime := time.UnixMilli(solution.SubmitTime).Format("2006-01-02 15:04:05")
 
 	// Create the markdown table, integrating the links directly into it
 	markdown := "| Status | Time | Memory | Length | Lang | Submitted | Vjudge | Origin |\n"
