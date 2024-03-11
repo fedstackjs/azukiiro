@@ -84,19 +84,36 @@ func Poll(ctx context.Context) (bool, error) {
 	err = judge(ctx, res)
 	if err != nil {
 		logrus.Println("Judge finished with error:", err)
-		err = client.SaveSolutionDetails(ctx, &common.SolutionDetails{
-			Version: 1,
-			Jobs:    []*common.SolutionDetailsJob{},
-			Summary: fmt.Sprintf("An Error has occurred:\n\n```\n%s\n```", err),
-		})
+		judgeErr, ok := err.(JudgeError)
+
+		var details *common.SolutionDetails
+		if ok {
+			details = judgeErr.Details()
+		}
+		if details == nil {
+			details = &common.SolutionDetails{
+				Version: 1,
+				Jobs:    []*common.SolutionDetailsJob{},
+				Summary: fmt.Sprintf("An Error has occurred:\n\n```\n%s\n```", err),
+			}
+		}
+		err = client.SaveSolutionDetails(ctx, details)
 		if err != nil {
 			logrus.Println("Save details failed:", err)
 		}
-		err = client.PatchSolutionTask(ctx, &common.SolutionInfo{
-			Score:   0,
-			Status:  "Error",
-			Message: "Judge error",
-		})
+
+		var info *common.SolutionInfo
+		if ok {
+			info = judgeErr.Info()
+		}
+		if info == nil {
+			info = &common.SolutionInfo{
+				Score:   0,
+				Status:  "Error",
+				Message: "Judge error",
+			}
+		}
+		err = client.PatchSolutionTask(ctx, info)
 		if err != nil {
 			logrus.Println("Patch task failed:", err)
 		}

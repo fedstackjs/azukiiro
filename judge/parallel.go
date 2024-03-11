@@ -35,6 +35,9 @@ func parallelPoll(ctx context.Context) (*RemoteJudgeTask, bool, error) {
 		solutionData: "",
 		solutionId:   res.SolutionId,
 		taskId:       res.TaskId,
+		env: map[string]string{
+			"userId": res.UserId,
+		},
 	}
 
 	if res.ErrMsg != "" {

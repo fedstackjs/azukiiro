@@ -11,7 +11,7 @@ import (
 
 	"github.com/fedstackjs/azukiiro/common"
 	"github.com/fedstackjs/azukiiro/judge"
-	"github.com/fedstackjs/azukiiro/storage"
+	"github.com/fedstackjs/azukiiro/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -23,28 +23,6 @@ type UojAdapter struct{}
 
 func (u *UojAdapter) Name() string {
 	return "uoj"
-}
-
-func Unzip(source string, target string) (string, error) {
-	logrus.Printf("Unzipping %s to %s\n", source, target)
-	dir, err := storage.MkdirTemp(target)
-	if err != nil {
-		return dir, err
-	}
-	err = exec.Command("unzip", source, "-d", dir).Run()
-	if err != nil {
-		os.RemoveAll(dir)
-		logrus.Println("Error unzipping", source, ":", err)
-		return dir, fmt.Errorf("failed to extract solution")
-	}
-	// remove all symlinks to avoid security issues
-	err = exec.Command("find", dir, "-type", "l", "-delete").Run()
-	if err != nil {
-		os.RemoveAll(dir)
-		logrus.Println("Error removing symlinks in", dir, ":", err)
-		return dir, fmt.Errorf("failed to extract solution")
-	}
-	return dir, nil
 }
 
 type Test struct {
@@ -176,12 +154,12 @@ func (u *UojAdapter) Judge(ctx context.Context, task judge.JudgeTask) error {
 	judgerPath := "/opt/uoj_judger"
 
 	// unzip data
-	problemDir, err := Unzip(problemData, "problem")
+	problemDir, err := utils.Unzip(problemData, "problem")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(problemDir)
-	solutionDir, err := Unzip(solutionData, "solution")
+	solutionDir, err := utils.Unzip(solutionData, "solution")
 	if err != nil {
 		return err
 	}
