@@ -4,27 +4,38 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
 var VjStatusMap = map[string]string{
-	"Accepted":              "Accepted",
-	"Presentation Error":    "Presentation Error",
-	"Wrong Answer":          "Wrong Answer",
-	"Time Limit Exceed":     "Time Limit Exceed",
-	"Memory Limit Exceed":   "Memory Limit Exceed",
-	"Output Limit Exceed":   "Output Limit Exceed",
-	"Runtime Error":         "Runtime Error",
-	"Compile Error":         "Compile Error",
-	"Remote OJ Unavailable": "Judge Error",
-	"Judge Failed":          "Judge Error",
-	"Unknown Error":         "Judge Error",
-	"Submit Failed":         "Judge Error",
+	"Accepted":                  "Accepted",
+	"Partial Accepted":          "Partial Accepted",
+	"Presentation Error":        "Presentation Error",
+	"Wrong Answer":              "Wrong Answer",
+	"Incorrect":                 "Wrong Answer",
+	"Time Limit Exceed":         "Time Limit Exceed",
+	"Terminated due to timeout": "Time Limit Exceed",
+	"Memory Limit Exceed":       "Memory Limit Exceed",
+	"Output Limit Exceed":       "Output Limit Exceed",
+	"Runtime Error":             "Runtime Error",
+	"Segmentation Fault":        "Runtime Error",
+	"Compile Error":             "Compile Error",
+	"Compilation Error":         "Compile Error",
+	"Remote OJ Unavailable":     "Judge Error",
+	"Judge Failed":              "Judge Error",
+	"Unknown Error":             "Judge Error",
+	"Submit Failed":             "Judge Error",
 }
 
 func getMappedStatus(status string) string {
-	if v, ok := VjStatusMap[status]; ok {
-		return v
+	for k, v := range VjStatusMap {
+		if len(status) < len(k) {
+			continue
+		}
+		if strings.ToLower(status)[0:len(k)] == strings.ToLower(k) {
+			return v
+		}
 	}
 	return "Judge Error"
 }

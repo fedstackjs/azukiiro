@@ -35,6 +35,14 @@ func GetAdapter(name string) (JudgeAdapter, bool) {
 	return adapter, ok
 }
 
+func GetAdapterNames() []string {
+	names := make([]string, 0, len(adapters))
+	for name := range adapters {
+		names = append(names, name)
+	}
+	return names
+}
+
 type RemoteJudgeTask struct {
 	config       common.ProblemConfig
 	problemData  string

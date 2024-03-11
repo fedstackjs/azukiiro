@@ -47,7 +47,8 @@ type VjudgeSolutionMetadata struct {
 }
 
 type VjudgeConfig struct {
-	VjProblemId string `json:"vjProblemId"`
+	Oj      string `json:"oj"`
+	ProbNum string `json:"probNum"`
 }
 
 type VjudgeAdapter struct {
@@ -137,6 +138,13 @@ func (d *VjudgeAdapter) Judge(ctx context.Context, task judge.JudgeTask) error {
 	result, err := d.getSolution(solutionId, shareCode)
 	if err != nil {
 		return err
+	}
+	if result.Oj != adapterConfig.Oj || result.ProbNum != adapterConfig.ProbNum {
+		return &judge.SimpleSolutionError{
+			S: "Bad Solution",
+			M: "Problem mismatch",
+			D: fmt.Sprintf("Problem mismatch: expected %s/%s, got %s/%s", adapterConfig.Oj, adapterConfig.ProbNum, result.Oj, result.ProbNum),
+		}
 	}
 	userId, err := d.getUserId(result.Author)
 	if err != nil {

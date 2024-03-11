@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -61,6 +62,7 @@ func (t *localJudgeTask) UploadDetails(ctx context.Context, details *common.Solu
 }
 
 func runJudge(ctx context.Context, regArgs *judgeArgs) func(*cobra.Command, []string) error {
+	fmt.Println("Supported adapters:", judge.GetAdapterNames())
 	return func(cmd *cobra.Command, args []string) error {
 		content, err := os.ReadFile(regArgs.problemConfig)
 		if err != nil {
@@ -86,6 +88,7 @@ func runJudge(ctx context.Context, regArgs *judgeArgs) func(*cobra.Command, []st
 			config:       problemConfig,
 			problemData:  regArgs.problemData,
 			solutionData: regArgs.solutionData,
+			env:          env,
 		}
 		adapter, ok := judge.GetAdapter(problemConfig.Judge.Adapter)
 		if !ok {
