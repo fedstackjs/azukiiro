@@ -16,16 +16,22 @@ type judgeArgs struct {
 	problemConfig string
 	problemData   string
 	solutionData  string
+	env           string
 }
 
 type localJudgeTask struct {
 	config       common.ProblemConfig
 	problemData  string
 	solutionData string
+	env          map[string]string
 }
 
 func (t *localJudgeTask) Config() common.ProblemConfig {
 	return t.config
+}
+
+func (t *localJudgeTask) Env() map[string]string {
+	return t.env
 }
 
 func (t *localJudgeTask) ProblemData() string {
@@ -71,6 +77,10 @@ func runJudge(ctx context.Context, regArgs *judgeArgs) func(*cobra.Command, []st
 		regArgs.solutionData, err = filepath.Abs(regArgs.solutionData)
 		if err != nil {
 			return err
+		}
+		env := make(map[string]string)
+		if err := json.Unmarshal([]byte(regArgs.env), &env); err != nil {
+			logrus.Warnf("Failed to parse env: %v", err)
 		}
 		task := &localJudgeTask{
 			config:       problemConfig,

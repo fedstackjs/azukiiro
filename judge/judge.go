@@ -47,6 +47,9 @@ func judge(ctx context.Context, res *client.PollSolutionResponse) error {
 		config:       res.ProblemConfig,
 		problemData:  problemData,
 		solutionData: solutionData,
+		env: map[string]string{
+			"userId": res.UserId,
+		},
 	}
 	return adapter.Judge(ctx, task)
 }

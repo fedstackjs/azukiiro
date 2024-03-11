@@ -34,6 +34,8 @@ type PollSolutionRequest struct {
 type PollSolutionResponse struct {
 	TaskId           string               `json:"taskId"`
 	SolutionId       string               `json:"solutionId"`
+	UserId           string               `json:"userId"`
+	ContestId        string               `json:"contestId"`
 	ProblemConfig    common.ProblemConfig `json:"problemConfig"`
 	ProblemDataUrl   string               `json:"problemDataUrl"`
 	ProblemDataHash  string               `json:"problemDataHash"`

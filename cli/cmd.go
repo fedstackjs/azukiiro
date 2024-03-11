@@ -93,6 +93,7 @@ func Execute(ctx context.Context) {
 	judgeCmd.MarkFlagRequired("problem-data")
 	judgeCmd.Flags().StringVar(&judgeArgs.solutionData, "solution-data", "", "Solution data file")
 	judgeCmd.MarkFlagRequired("solution-data")
+	judgeCmd.Flags().StringVar(&judgeArgs.env, "env", "{}", "Environment variables")
 	rootCmd.AddCommand(judgeCmd)
 
 	if err := rootCmd.Execute(); err != nil {

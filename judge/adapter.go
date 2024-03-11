@@ -9,6 +9,7 @@ import (
 
 type JudgeTask interface {
 	Config() common.ProblemConfig
+	Env() map[string]string
 	ProblemData() string
 	SolutionData() string
 	Update(ctx context.Context, update *common.SolutionInfo) error
@@ -40,10 +41,15 @@ type RemoteJudgeTask struct {
 	solutionData string
 	solutionId   string
 	taskId       string
+	env          map[string]string
 }
 
 func (t *RemoteJudgeTask) Config() common.ProblemConfig {
 	return t.config
+}
+
+func (t *RemoteJudgeTask) Env() map[string]string {
+	return t.env
 }
 
 func (t *RemoteJudgeTask) ProblemData() string {
