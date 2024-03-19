@@ -9,13 +9,13 @@ hero:
   actions:
     - theme: brand
       text: 开始使用
-      link: /getting-started
+      link: /guides/
     - theme: alt
       text: 运维指南
-      link: /admin-guide
+      link: /guides/admin-guide
     - theme: alt
       text: 开发指南
-      link: /dev-guide
+      link: /guides/dev-guide
 
 features:
   - icon: 📈

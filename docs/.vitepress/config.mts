@@ -8,19 +8,27 @@ export default defineConfig({
 
     nav: [
       { text: '首页', link: '/' },
-      { text: '开始使用', link: '/getting-started' }
+      { text: '开始使用', link: '/guides/' },
+      { text: '适配器文档', link: '/adapters/' }
     ],
 
     sidebar: [
       {
         text: '开始使用',
-        items: [{ text: '开始使用', link: '/getting-started' }]
+        link: '/guides/',
+        items: [
+          { text: '运维指南', link: '/guides/admin-guide' },
+          { text: '开发指南', link: '/guides/dev-guide' }
+        ]
       },
       {
-        text: '教程',
+        text: '适配器文档',
+        link: '/adapters/',
         items: [
-          { text: '运维指南', link: '/admin-guide' },
-          { text: '开发指南', link: '/dev-guide' }
+          { text: 'Dummy', link: '/adapters/dummy' },
+          { text: 'UOJ', link: '/adapters/uoj' },
+          { text: 'Glue', link: '/adapters/glue' },
+          { text: 'VJudge', link: '/adapters/vjudge' }
         ]
       }
     ],
