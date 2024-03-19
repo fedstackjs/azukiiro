@@ -24,6 +24,8 @@ func Execute(ctx context.Context) {
 			viper.SetConfigFile(configFile)
 		} else {
 			viper.AddConfigPath("/etc/azukiiro/")
+			viper.AddConfigPath("$HOME/.config/azukiiro/")
+			viper.AddConfigPath("$HOME/.azukiiro/")
 			viper.AddConfigPath(".")
 			viper.SetConfigName("config")
 		}
