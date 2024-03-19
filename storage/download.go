@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 
 	"github.com/sirupsen/logrus"
@@ -24,11 +23,11 @@ func GetRootPath() string {
 }
 
 func GetTmpPath() string {
-	return path.Join(GetRootPath(), "tmp")
+	return filepath.Join(GetRootPath(), "tmp")
 }
 
 func GetCachePath() string {
-	return path.Join(GetRootPath(), "cache")
+	return filepath.Join(GetRootPath(), "cache")
 }
 
 func Initialize() {
@@ -94,14 +93,14 @@ func DownloadFile(ctx context.Context, url string, hash string) error {
 
 	// Move tmp file to cache
 	cachePath := GetCachePath()
-	filePath := path.Join(cachePath, hash)
+	filePath := filepath.Join(cachePath, hash)
 	return os.Rename(file.Name(), filePath)
 }
 
 func PrepareFile(ctx context.Context, url string, hash string) (string, error) {
 	logrus.Println("Preparing file:", url, hash)
 	cachePath := GetCachePath()
-	filePath := path.Join(cachePath, hash)
+	filePath := filepath.Join(cachePath, hash)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		// Download file with retry
 		retry := 3
