@@ -12,6 +12,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	commands = append(commands, &rankerCmd{})
+}
+
+type rankerCmd struct{}
+
+func (c *rankerCmd) Mount(ctx context.Context, root *cobra.Command) {
+	var rankerArgs rankerArgs
+	rankerCmd := &cobra.Command{
+		Use:   "ranker",
+		Short: "Run the ranker",
+		Args:  cobra.MaximumNArgs(0),
+		RunE:  runRanker(ctx, &rankerArgs),
+	}
+	rankerCmd.Flags().Float32Var(&rankerArgs.pollInterval, "poll-interval", 1, "Poll interval in seconds")
+	root.AddCommand(rankerCmd)
+}
+
 type rankerArgs struct {
 	pollInterval float32
 }

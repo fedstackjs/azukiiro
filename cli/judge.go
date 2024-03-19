@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -12,6 +11,30 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
+
+func init() {
+	commands = append(commands, &judgeCmd{})
+}
+
+type judgeCmd struct{}
+
+func (c *judgeCmd) Mount(ctx context.Context, root *cobra.Command) {
+	var judgeArgs judgeArgs
+	judgeCmd := &cobra.Command{
+		Use:   "judge",
+		Short: "Run the judge locally",
+		Args:  cobra.MaximumNArgs(0),
+		RunE:  runJudge(ctx, &judgeArgs),
+	}
+	judgeCmd.Flags().StringVar(&judgeArgs.problemConfig, "problem-config", "", "Problem config file")
+	judgeCmd.MarkFlagRequired("problem-config")
+	judgeCmd.Flags().StringVar(&judgeArgs.problemData, "problem-data", "", "Problem data file")
+	judgeCmd.MarkFlagRequired("problem-data")
+	judgeCmd.Flags().StringVar(&judgeArgs.solutionData, "solution-data", "", "Solution data file")
+	judgeCmd.MarkFlagRequired("solution-data")
+	judgeCmd.Flags().StringVar(&judgeArgs.env, "env", "{}", "Environment variables")
+	root.AddCommand(judgeCmd)
+}
 
 type judgeArgs struct {
 	problemConfig string
@@ -62,7 +85,6 @@ func (t *localJudgeTask) UploadDetails(ctx context.Context, details *common.Solu
 }
 
 func runJudge(ctx context.Context, regArgs *judgeArgs) func(*cobra.Command, []string) error {
-	fmt.Println("Supported adapters:", judge.GetAdapterNames())
 	return func(cmd *cobra.Command, args []string) error {
 		content, err := os.ReadFile(regArgs.problemConfig)
 		if err != nil {

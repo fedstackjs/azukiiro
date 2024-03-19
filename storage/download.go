@@ -32,7 +32,6 @@ func GetCachePath() string {
 }
 
 func Initialize() {
-	logrus.Println("Storage root path:", GetRootPath())
 	err := os.MkdirAll(GetTmpPath(), 0700)
 	if err != nil {
 		logrus.Fatalln("Failed to create tmp dir:", err)

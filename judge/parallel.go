@@ -3,8 +3,6 @@ package judge
 import (
 	"context"
 	"fmt"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/fedstackjs/azukiiro/client"
@@ -85,8 +83,7 @@ func parallelPoll(ctx context.Context) (*RemoteJudgeTask, bool, error) {
 }
 
 func ParallelPoller(ctx context.Context, pollInterval float32, queue chan<- *RemoteJudgeTask) {
-	signalCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
+	logrus.Infoln("Parallel poller started")
 	for {
 		task, cont, err := parallelPoll(ctx)
 		if task != nil {
@@ -122,15 +119,18 @@ func ParallelPoller(ctx context.Context, pollInterval float32, queue chan<- *Rem
 			}
 		}
 		if cont {
+			select {
+			case <-ctx.Done():
+				logrus.Info("Stopping parallel poller")
+				close(queue)
+				return
+			default:
+			}
 			continue
 		}
-		waitDur := time.Duration(0)
-		if !cont {
-			waitDur = time.Duration(pollInterval) * time.Second
-		}
-		timer := time.NewTimer(waitDur)
+		timer := time.NewTimer(time.Duration(pollInterval) * time.Second)
 		select {
-		case <-signalCtx.Done():
+		case <-ctx.Done():
 			if !timer.Stop() {
 				<-timer.C
 			}
@@ -155,6 +155,7 @@ func parallelJudge(ctx context.Context, task *RemoteJudgeTask) error {
 }
 
 func ParallelJudger(ctx context.Context, queue <-chan *RemoteJudgeTask) {
+	logrus.Infoln("Parallel judger started")
 	for task := range queue {
 		ctx := client.WithSolutionTask(ctx, task.solutionId, task.taskId)
 		err := parallelJudge(ctx, task)

@@ -13,6 +13,30 @@ import (
 	"github.com/fedstackjs/azukiiro/common"
 )
 
+func init() {
+	commands = append(commands, &registerCmd{})
+}
+
+type registerCmd struct{}
+
+func (c *registerCmd) Mount(ctx context.Context, root *cobra.Command) {
+	var regArgs registerArgs
+	registerCmd := &cobra.Command{
+		Use:   "register",
+		Short: "Register a runner to the server",
+		Args:  cobra.MaximumNArgs(0),
+		RunE:  runRegister(ctx, &regArgs), // must use a pointer to regArgs
+	}
+	registerCmd.Flags().StringVar(&regArgs.ServerAddr, "server", "", "AOI Server address")
+	registerCmd.Flags().BoolVar(&regArgs.Force, "force", false, "Force register")
+	registerCmd.Flags().StringVar(&regArgs.Token, "token", "", "Runner token")
+	registerCmd.Flags().StringVar(&regArgs.Name, "name", "", "Runner name")
+	registerCmd.Flags().StringVar(&regArgs.Labels, "labels", "", "Runner tags, comma separated")
+	registerCmd.MarkFlagRequired("server")
+	registerCmd.MarkFlagRequired("token")
+	root.AddCommand(registerCmd)
+}
+
 type registerArgs struct {
 	ServerAddr string
 	Force      bool
