@@ -1,22 +1,31 @@
 package common
 
 import (
-	"fmt"
 	"runtime/debug"
 )
 
 func GetVersion() string {
 	if info, ok := debug.ReadBuildInfo(); ok {
-		settings := make(map[string]string)
+		version := "azukiiro/"
+		if info.Main.Version == "(devel)" {
+			version += "devel"
+		} else {
+			version += info.Main.Version
+		}
+		version += " ("
+		version += info.Main.Path
 		for _, setting := range info.Settings {
-			settings[setting.Key] = setting.Value
+			switch setting.Key {
+			case "vcs.revision":
+				version += "; " + setting.Value[:7]
+			case "vcs.modified":
+				if setting.Value == "true" {
+					version += "; modified"
+				}
+			}
 		}
-		hash, ok := settings["vcs.revision"]
-		if !ok {
-			return "azukiiro/unknown"
-		}
-		hash = hash[:7]
-		return fmt.Sprintf("azukiiro/%s %s@%s", hash, info.Main.Version, settings["vcs.time"])
+		version += ")"
+		return version
 	}
 	return "azukiiro/unknown"
 }
