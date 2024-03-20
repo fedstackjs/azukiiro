@@ -118,14 +118,17 @@ jobs:
       - name: Show workflow information
         id: parse
         run: |
-          export _NAME=$(jq ".[\"$GOOS-$GOARCH$GOARM\"].friendlyName" -r < assets/friendly-filenames.json)
-          echo "GOOS: $GOOS, GOARCH: $GOARCH, GOARM: $GOARM, RELEASE_NAME: $_NAME"
-          echo "ASSET_NAME=$_NAME" >> $GITHUB_OUTPUT
-          echo "ASSET_NAME=$_NAME" >> $GITHUB_ENV
-          export _VERSION=$(git describe --tags --abbrev=0)
-          echo "VERSION: $_VERSION"
-          echo "VERSION=$_VERSION" >> $GITHUB_OUTPUT
-          echo "VERSION=$_VERSION" >> $GITHUB_ENV
+          NAME=$(jq ".[\"$GOOS-$GOARCH$GOARM\"].friendlyName" -r < assets/friendly-filenames.json)
+          echo "GOOS: $GOOS, GOARCH: $GOARCH, GOARM: $GOARM, RELEASE_NAME: $NAME"
+          echo "ASSET_NAME=$NAME" >> $GITHUB_OUTPUT
+          echo "ASSET_NAME=$NAME" >> $GITHUB_ENV
+          VERSION=$(git tag --points-at HEAD)
+          if [ -z "$VERSION" ]; then
+            VERSION=$(git rev-parse --abbrev-ref HEAD)
+          fi
+          echo "VERSION: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Set up Go
         uses: actions/setup-go@v4
