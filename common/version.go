@@ -4,28 +4,36 @@ import (
 	"runtime/debug"
 )
 
-func GetVersion() string {
+var (
+	Version string
+)
+
+func init() {
+	Version = "azukiiro/"
 	if info, ok := debug.ReadBuildInfo(); ok {
-		version := "azukiiro/"
 		if info.Main.Version == "(devel)" {
-			version += "devel"
+			Version += "devel"
 		} else {
-			version += info.Main.Version
+			Version += info.Main.Version
 		}
-		version += " ("
-		version += info.Main.Path
+		Version += " ("
+		Version += info.Main.Path
 		for _, setting := range info.Settings {
 			switch setting.Key {
 			case "vcs.revision":
-				version += "; " + setting.Value[:7]
+				Version += "; " + setting.Value[:7]
 			case "vcs.modified":
 				if setting.Value == "true" {
-					version += "; modified"
+					Version += "; modified"
 				}
 			}
 		}
-		version += ")"
-		return version
+		Version += ")"
+	} else {
+		Version += "unknown"
 	}
-	return "azukiiro/unknown"
+}
+
+func GetVersion() string {
+	return Version
 }

@@ -116,12 +116,16 @@ jobs:
           fetch-depth: 0
 
       - name: Show workflow information
-        id: get_filename
+        id: parse
         run: |
           export _NAME=$(jq ".[\"$GOOS-$GOARCH$GOARM\"].friendlyName" -r < assets/friendly-filenames.json)
           echo "GOOS: $GOOS, GOARCH: $GOARCH, GOARM: $GOARM, RELEASE_NAME: $_NAME"
           echo "ASSET_NAME=$_NAME" >> $GITHUB_OUTPUT
           echo "ASSET_NAME=$_NAME" >> $GITHUB_ENV
+          export _VERSION=$(git describe --tags --abbrev=0)
+          echo "VERSION: $_VERSION"
+          echo "VERSION=$_VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$_VERSION" >> $GITHUB_ENV
 
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -134,7 +138,7 @@ jobs:
       - name: Build Azukiiro
         run: |
           mkdir -p build
-          go build -v -o build/azukiiro -trimpath -ldflags "-s -w -buildid="
+          go build -o build/azukiiro -trimpath -ldflags "-s -w -buildid= -X main.version=$VERSION"
 
       - name: Rename Windows Azukiiro
         if: matrix.goos == 'windows'
@@ -157,8 +161,8 @@ jobs:
       - name: Upload ZIP file to Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: azukiiro-${{ steps.get_filename.outputs.ASSET_NAME }}.zip
-          path: azukiiro-${{ steps.get_filename.outputs.ASSET_NAME }}.zip
+          name: azukiiro-${{ steps.parse.outputs.ASSET_NAME }}.zip
+          path: azukiiro-${{ steps.parse.outputs.ASSET_NAME }}.zip
 
       - name: Upload files to GitHub release
         uses: svenstaro/upload-release-action@v2
@@ -166,6 +170,6 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file_glob: true
-          file: ./azukiiro-${{ steps.get_filename.outputs.ASSET_NAME }}.zip*
+          file: ./azukiiro-${{ steps.parse.outputs.ASSET_NAME }}.zip*
           tag: ${{ github.ref }}
           overwrite: true
