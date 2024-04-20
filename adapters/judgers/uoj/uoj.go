@@ -149,7 +149,9 @@ func (u *UojAdapter) Judge(ctx context.Context, task judge.JudgeTask) error {
 	adapterConfig := UOJAdapterConfig{
 		SandboxMode: "bwrap",
 	}
-	json.Unmarshal([]byte(config.Judge.Config), &adapterConfig)
+	if err := json.Unmarshal([]byte(config.Judge.Config), &adapterConfig); err != nil {
+		return err
+	}
 
 	judgerPath := "/opt/uoj_judger"
 
