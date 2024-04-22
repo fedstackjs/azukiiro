@@ -9,12 +9,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Unzip(source string, target string) (string, error) {
-	logrus.Printf("Unzipping %s to %s\n", source, target)
+func UnzipTemp(source string, target string) (string, error) {
 	dir, err := storage.MkdirTemp(target)
 	if err != nil {
 		return dir, err
 	}
+	logrus.Infof("Unzipping %s to %s", source, dir)
 	err = exec.Command("unzip", source, "-d", dir).Run()
 	if err != nil {
 		os.RemoveAll(dir)

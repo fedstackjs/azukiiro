@@ -90,7 +90,7 @@ func (g *DenoAdapter) Judge(ctx context.Context, task judge.JudgeTask) error {
 		return err
 	}
 
-	problemDir, err := utils.Unzip(task.ProblemData(), "problem")
+	problemDir, err := utils.UnzipTemp(task.ProblemData(), "problem-*")
 	if err != nil {
 		return err
 	}
@@ -101,13 +101,13 @@ func (g *DenoAdapter) Judge(ctx context.Context, task judge.JudgeTask) error {
 		return err
 	}
 
-	solutionDir, err := utils.Unzip(task.SolutionData(), "solution")
+	solutionDir, err := utils.UnzipTemp(task.SolutionData(), "solution-*")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(solutionDir)
 
-	workDir, err := storage.MkdirTemp("deno-*")
+	workDir, err := storage.MkdirTemp("work-deno-*")
 	if err != nil {
 		return err
 	}

@@ -1,3 +1,5 @@
+//go:build !windows
+
 package uoj
 
 import (
@@ -7,10 +9,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"slices"
 
 	"github.com/fedstackjs/azukiiro/common"
 	"github.com/fedstackjs/azukiiro/judge"
+	"github.com/fedstackjs/azukiiro/storage"
 	"github.com/fedstackjs/azukiiro/utils"
 	"github.com/sirupsen/logrus"
 )
@@ -54,7 +58,8 @@ func toCodeBlock(v interface{}) string {
 	return fmt.Sprintf("```\n%s\n```", v)
 }
 
-func ReadResult(resultPath string) (common.SolutionInfo, common.SolutionDetails, error) {
+func ReadResult(resultDir string) (common.SolutionInfo, common.SolutionDetails, error) {
+	resultPath := filepath.Join(resultDir, "result.txt")
 	// read result
 	resultFile, err := os.ReadFile(resultPath)
 	if err != nil {
@@ -98,6 +103,9 @@ func ReadResult(resultPath string) (common.SolutionInfo, common.SolutionDetails,
 		status = result.Error
 	} else {
 		for _, r := range result.Details.Tests {
+			if r.Info == "Extra Test Passed" {
+				r.Info = "Accepted"
+			}
 			if status == "Accepted" && r.Info != "Accepted" {
 				status = r.Info
 			}
@@ -156,16 +164,29 @@ func (u *UojAdapter) Judge(ctx context.Context, task judge.JudgeTask) error {
 	judgerPath := "/opt/uoj_judger"
 
 	// unzip data
-	problemDir, err := utils.Unzip(problemData, "problem")
+	problemDir, err := utils.UnzipTemp(problemData, "problem-*")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(problemDir)
-	solutionDir, err := utils.Unzip(solutionData, "solution")
+	solutionDir, err := utils.UnzipTemp(solutionData, "solution-*")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(solutionDir)
+	workDir, err := storage.MkdirTemp("work-uoj-*")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(workDir)
+	judgerWorkDir := filepath.Join(workDir, "work")
+	if err := os.Mkdir(judgerWorkDir, 0750); err != nil {
+		return err
+	}
+	judgerResultDir := filepath.Join(workDir, "result")
+	if err := os.Mkdir(judgerResultDir, 0750); err != nil {
+		return err
+	}
 
 	language := "C++14"
 	if content, err := os.ReadFile(solutionDir + "/.metadata.json"); err == nil {
@@ -182,43 +203,35 @@ func (u *UojAdapter) Judge(ctx context.Context, task judge.JudgeTask) error {
 	}
 
 	// run judger
-	var cmd *exec.Cmd
-	switch adapterConfig.SandboxMode {
-	case "none":
-		cmd = exec.Command(judgerPath+"/main_judger", solutionDir, problemDir)
-	case "bwrap":
-		cmd = exec.Command("bwrap",
-			"--dir", "/tmp",
-			"--dir", "/var",
-			"--bind", solutionDir, "/tmp/solution",
-			"--ro-bind", problemDir, "/tmp/problem",
-			"--ro-bind", judgerPath, "/opt/uoj_judger",
-			"--bind", judgerPath+"/result", "/opt/uoj_judger/result",
-			"--bind", judgerPath+"/work", "/opt/uoj_judger/work",
-			"--ro-bind", "/usr", "/usr",
-			"--symlink", "../tmp", "var/tmp",
-			"--proc", "/proc",
-			"--dev", "/dev",
-			"--ro-bind", "/etc/resolv.conf", "/etc/resolv.conf",
-			"--symlink", "usr/lib", "/lib",
-			"--symlink", "usr/lib64", "/lib64",
-			"--symlink", "usr/bin", "/bin",
-			"--symlink", "usr/sbin", "/sbin",
-			"--chdir", "/opt/uoj_judger",
-			"--unshare-all",
-			"--die-with-parent",
-			"/opt/uoj_judger/main_judger", "/tmp/solution", "/tmp/problem")
-	default:
-		return fmt.Errorf("unknown sandbox mode: %s", adapterConfig.SandboxMode)
-	}
+	cmd := exec.Command("bwrap",
+		"--dir", "/tmp",
+		"--dir", "/var",
+		"--bind", solutionDir, "/tmp/solution",
+		"--ro-bind", problemDir, "/tmp/problem",
+		"--ro-bind", judgerPath, "/opt/uoj_judger",
+		"--bind", judgerResultDir, "/opt/uoj_judger/result",
+		"--bind", judgerWorkDir, "/opt/uoj_judger/work",
+		"--ro-bind", "/usr", "/usr",
+		"--symlink", "../tmp", "var/tmp",
+		"--proc", "/proc",
+		"--dev", "/dev",
+		"--ro-bind", "/etc/resolv.conf", "/etc/resolv.conf",
+		"--symlink", "usr/lib", "/lib",
+		"--symlink", "usr/lib64", "/lib64",
+		"--symlink", "usr/bin", "/bin",
+		"--symlink", "usr/sbin", "/sbin",
+		"--chdir", "/opt/uoj_judger",
+		"--unshare-all",
+		"--die-with-parent",
+		"/opt/uoj_judger/main_judger", "/tmp/solution", "/tmp/problem")
 	cmd.Dir = judgerPath
-	logrus.Printf("Running %s\n", cmd)
+	logrus.Infof("Running %s", cmd)
 	if err := cmd.Run(); err != nil {
 		return err
 	}
 
 	// read & report result
-	result, resultDetails, _ := ReadResult(judgerPath + "/result/result.txt")
+	result, resultDetails, _ := ReadResult(judgerResultDir)
 	task.Update(ctx, &result)
 	task.UploadDetails(ctx, &resultDetails)
 

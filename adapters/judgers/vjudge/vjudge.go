@@ -100,7 +100,7 @@ func (d *VjudgeAdapter) Judge(ctx context.Context, task judge.JudgeTask) error {
 		return err
 	}
 
-	solutionDir, err := utils.Unzip(task.SolutionData(), "solution")
+	solutionDir, err := utils.UnzipTemp(task.SolutionData(), "solution-*")
 	if err != nil {
 		return err
 	}
