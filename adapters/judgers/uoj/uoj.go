@@ -11,6 +11,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
+	"strconv"
+	"strings"
 
 	"github.com/fedstackjs/azukiiro/common"
 	"github.com/fedstackjs/azukiiro/judge"
@@ -29,27 +31,55 @@ func (u *UojAdapter) Name() string {
 	return "uoj"
 }
 
+func parseProblemConf(problemDir string) (map[string]string, error) {
+	problemConfPath := filepath.Join(problemDir, "problem.conf")
+	problemConfFile, err := os.ReadFile(problemConfPath)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]string)
+	lines := strings.Split(string(problemConfFile), "\n")
+	for _, line := range lines {
+		key, value, found := strings.Cut(line, " ")
+		if found {
+			result[key] = value
+		}
+	}
+	return result, nil
+}
+
 type Test struct {
-	Num    int    `xml:"num,attr"`
-	Score  int    `xml:"score,attr"`
-	Info   string `xml:"info,attr"`
-	Time   int    `xml:"time,attr"`
-	Memory int    `xml:"memory,attr"`
-	In     string `xml:"in"`
-	Out    string `xml:"out"`
-	Res    string `xml:"res"`
+	Num    int     `xml:"num,attr"`
+	Score  float64 `xml:"score,attr"`
+	Info   string  `xml:"info,attr"`
+	Time   float64 `xml:"time,attr"`
+	Memory float64 `xml:"memory,attr"`
+	In     string  `xml:"in"`
+	Out    string  `xml:"out"`
+	Res    string  `xml:"res"`
+}
+
+type Subtask struct {
+	Num    int     `xml:"num,attr"`
+	Score  float64 `xml:"score,attr"`
+	Info   string  `xml:"info,attr"`
+	Time   float64 `xml:"time,attr"`
+	Memory float64 `xml:"memory,attr"`
+	Type   string  `xml:"type,attr"`
+	Tests  []Test  `xml:"test"`
 }
 
 type Details struct {
-	Tests []Test `xml:"test"`
-	Error string `xml:"error"`
+	Tests    []Test    `xml:"test"`
+	Subtasks []Subtask `xml:"subtask"`
+	Error    string    `xml:"error"`
 }
 
 type Result struct {
 	XMLName xml.Name `xml:"result"`
-	Score   int      `xml:"score"`
-	Time    int      `xml:"time"`
-	Memory  int      `xml:"memory"`
+	Score   float64  `xml:"score"`
+	Time    float64  `xml:"time"`
+	Memory  float64  `xml:"memory"`
 	Error   string   `xml:"error"`
 	Details Details  `xml:"details"`
 }
@@ -58,87 +88,128 @@ func toCodeBlock(v interface{}) string {
 	return fmt.Sprintf("```\n%s\n```", v)
 }
 
-func ReadResult(resultDir string) (common.SolutionInfo, common.SolutionDetails, error) {
+func errorDetails(err error) string {
+	if err == nil {
+		return ""
+	}
+	return fmt.Sprintf("Error Details:\n\n%s", toCodeBlock(err))
+}
+
+func testsToJob(subtask Subtask, problemConf map[string]string) (*common.SolutionDetailsJob, error) {
+	str, ok := problemConf[fmt.Sprintf("subtask_score_%d", subtask.Num)]
+	if !ok {
+		return nil, fmt.Errorf("Subtask %v not found in conf", subtask.Num)
+	}
+	scoreScale, err := strconv.ParseFloat(str, 64)
+	if err != nil {
+		return nil, err
+	}
+	result := &common.SolutionDetailsJob{
+		Name:       fmt.Sprintf("Subtask %d", subtask.Num),
+		Score:      subtask.Score / scoreScale * 100,
+		ScoreScale: scoreScale,
+		Status:     subtask.Info,
+		Tests:      []*common.SolutionDetailsTest{},
+		Summary:    "",
+	}
+	for _, r := range subtask.Tests {
+		result.Tests = append(result.Tests, &common.SolutionDetailsTest{
+			Name:    "Test " + fmt.Sprint(r.Num),
+			Score:   float64(r.Score),
+			Status:  r.Info,
+			Summary: "Time: `" + fmt.Sprint(r.Time) + "`\tMemory: `" + fmt.Sprint(r.Memory) + "`\n\nInput:\n\n" + toCodeBlock(r.In) + "\n\nOutput:\n\n" + toCodeBlock(r.Out) + "\n\nResult:\n\n" + toCodeBlock(r.Res),
+		})
+	}
+	return result, nil
+}
+
+func GenerateErrorResult(err error) (common.SolutionInfo, common.SolutionDetails, error) {
+	return common.SolutionInfo{
+			Score: 0,
+			Metrics: &map[string]float64{
+				"cpu": 0,
+				"mem": 0,
+			},
+			Status:  "Judge Error",
+			Message: fmt.Sprintf("%s", err),
+		}, common.SolutionDetails{
+			Version: 1,
+			Jobs:    nil,
+			Summary: errorDetails(err),
+		},
+		err
+}
+
+func ReadResult(resultDir string, problemConf map[string]string) (common.SolutionInfo, common.SolutionDetails, error) {
 	resultPath := filepath.Join(resultDir, "result.txt")
-	// read result
 	resultFile, err := os.ReadFile(resultPath)
 	if err != nil {
-		return common.SolutionInfo{
-				Score: 0,
-				Metrics: &map[string]float64{
-					"cpu": 0,
-					"mem": 0,
-				},
-				Status:  "Unknown Error",
-				Message: "An unknown error occurred when reading the result",
-			}, common.SolutionDetails{
-				Version: 1,
-				Jobs:    nil,
-				Summary: "Unknown Error",
-			}, err
+		return GenerateErrorResult(fmt.Errorf("failed to read UOJ result"))
 	}
 
-	// unmarshal XML
 	var result Result
 	if err := xml.Unmarshal(resultFile, &result); err != nil {
-		return common.SolutionInfo{
-				Score: 0,
-				Metrics: &map[string]float64{
-					"cpu": 0,
-					"mem": 0,
-				},
-				Status:  "Unknown Error",
-				Message: "An unknown error occurred when unmarshaling the result",
-			}, common.SolutionDetails{
-				Version: 1,
-				Jobs:    nil,
-				Summary: "Unknown Error",
-			}, err
+		return GenerateErrorResult(fmt.Errorf("failed to parse UOJ result"))
+	}
+
+	info := common.SolutionInfo{
+		Score: float64(result.Score),
+		Metrics: &map[string]float64{
+			"cpu": float64(result.Time),
+			"mem": float64(result.Memory),
+		},
+		Status:  "Accepted",
+		Message: "UOJ Judger OK",
+	}
+	details := common.SolutionDetails{
+		Version: 1,
+		Jobs:    []*common.SolutionDetailsJob{},
+		Summary: "",
 	}
 
 	// Result -> common.SolutionDetails
-	var testsResult []*common.SolutionDetailsTest
-	status := "Accepted"
 	if result.Error != "" {
-		status = result.Error
+		info.Status = result.Error
 	} else {
-		for _, r := range result.Details.Tests {
-			if r.Info == "Extra Test Passed" {
-				r.Info = "Accepted"
+		for _, subtask := range result.Details.Subtasks {
+			job, err := testsToJob(subtask, problemConf)
+			if err != nil {
+				return GenerateErrorResult(err)
 			}
-			if status == "Accepted" && r.Info != "Accepted" {
-				status = r.Info
+			details.Jobs = append(details.Jobs, job)
+		}
+		if len(result.Details.Tests) > 0 {
+			job := &common.SolutionDetailsJob{
+				Name:       "Default",
+				Score:      result.Score,
+				ScoreScale: 100,
+				Status:     "Accepted",
+				Tests:      []*common.SolutionDetailsTest{},
+				Summary:    "",
 			}
-			testsResult = append(testsResult, &common.SolutionDetailsTest{
-				Name:    "Test " + fmt.Sprint(r.Num),
-				Score:   float64(r.Score),
-				Status:  r.Info,
-				Summary: "Time: `" + fmt.Sprint(r.Time) + "`\tMemory: `" + fmt.Sprint(r.Memory) + "`\n\nInput:\n\n" + toCodeBlock(r.In) + "\n\nOutput:\n\n" + toCodeBlock(r.Out) + "\n\nResult:\n\n" + toCodeBlock(r.Res),
-			})
+			for _, r := range result.Details.Tests {
+				if r.Info == "Extra Test Passed" {
+					r.Info = "Accepted"
+				}
+				if job.Status == "Accepted" && r.Info != "Accepted" {
+					job.Status = r.Info
+				}
+				job.Tests = append(job.Tests, &common.SolutionDetailsTest{
+					Name:    "Test " + fmt.Sprint(r.Num),
+					Score:   float64(r.Score),
+					Status:  r.Info,
+					Summary: "Time: `" + fmt.Sprint(r.Time) + "`\tMemory: `" + fmt.Sprint(r.Memory) + "`\n\nInput:\n\n" + toCodeBlock(r.In) + "\n\nOutput:\n\n" + toCodeBlock(r.Out) + "\n\nResult:\n\n" + toCodeBlock(r.Res),
+				})
+			}
+			details.Jobs = append(details.Jobs, job)
+		}
+		for _, job := range details.Jobs {
+			if info.Status == "Accepted" && job.Status != "Accepted" {
+				info.Status = job.Status
+			}
 		}
 	}
-	return common.SolutionInfo{
-			Score: float64(result.Score),
-			Metrics: &map[string]float64{
-				"cpu": float64(result.Time),
-				"mem": float64(result.Memory),
-			},
-			Status:  status,
-			Message: "UOJ Judger finished with exit code 0",
-		}, common.SolutionDetails{
-			Version: 1,
-			Jobs: []*common.SolutionDetailsJob{
-				{
-					Name:       "default",
-					Score:      float64(result.Score),
-					ScoreScale: 100,
-					Status:     status,
-					Tests:      testsResult,
-					Summary:    "The default subtask",
-				},
-			},
-			Summary: fmt.Sprintf("Error:\n\n%s", toCodeBlock(result.Details.Error)),
-		}, nil
+	return info, details, nil
 }
 
 type UOJAdapterConfig struct {
@@ -169,6 +240,10 @@ func (u *UojAdapter) Judge(ctx context.Context, task judge.JudgeTask) error {
 		return err
 	}
 	defer os.RemoveAll(problemDir)
+	problemConf, err := parseProblemConf(problemDir)
+	if err != nil {
+		return err
+	}
 	solutionDir, err := utils.UnzipTemp(solutionData, "solution-*")
 	if err != nil {
 		return err
@@ -231,7 +306,7 @@ func (u *UojAdapter) Judge(ctx context.Context, task judge.JudgeTask) error {
 	}
 
 	// read & report result
-	result, resultDetails, _ := ReadResult(judgerResultDir)
+	result, resultDetails, _ := ReadResult(judgerResultDir, problemConf)
 	task.Update(ctx, &result)
 	task.UploadDetails(ctx, &resultDetails)
 
