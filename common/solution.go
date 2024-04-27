@@ -3,18 +3,18 @@ package common
 type SolutionDetailsTest struct {
 	Name       string  `json:"name"`
 	Score      float64 `json:"score"`
-	ScoreScale float64 `json:"scoreScale"`
+	ScoreScale float64 `json:"scoreScale,omitempty"`
 	Status     string  `json:"status"`
-	Summary    string  `json:"summary"`
+	Summary    string  `json:"summary,omitempty"`
 }
 
 type SolutionDetailsJob struct {
 	Name       string                 `json:"name"`
 	Score      float64                `json:"score"`
-	ScoreScale float64                `json:"scoreScale"`
+	ScoreScale float64                `json:"scoreScale,omitempty"`
 	Status     string                 `json:"status"`
 	Tests      []*SolutionDetailsTest `json:"tests"`
-	Summary    string                 `json:"summary"`
+	Summary    string                 `json:"summary,omitempty"`
 }
 
 type SolutionDetails struct {

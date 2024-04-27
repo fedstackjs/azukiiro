@@ -187,18 +187,18 @@ func ReadResult(resultDir string, problemConf map[string]string) (common.Solutio
 				Tests:      []*common.SolutionDetailsTest{},
 				Summary:    "",
 			}
-			for _, r := range result.Details.Tests {
-				if r.Info == "Extra Test Passed" {
-					r.Info = "Accepted"
+			for _, test := range result.Details.Tests {
+				if test.Info == "Extra Test Passed" {
+					test.Info = "Accepted"
 				}
-				if job.Status == "Accepted" && r.Info != "Accepted" {
-					job.Status = r.Info
+				if job.Status == "Accepted" && test.Info != "Accepted" {
+					job.Status = test.Info
 				}
 				job.Tests = append(job.Tests, &common.SolutionDetailsTest{
-					Name:    "Test " + fmt.Sprint(r.Num),
-					Score:   float64(r.Score),
-					Status:  r.Info,
-					Summary: "Time: `" + fmt.Sprint(r.Time) + "`\tMemory: `" + fmt.Sprint(r.Memory) + "`\n\nInput:\n\n" + toCodeBlock(r.In) + "\n\nOutput:\n\n" + toCodeBlock(r.Out) + "\n\nResult:\n\n" + toCodeBlock(r.Res),
+					Name:    "Test " + fmt.Sprint(test.Num),
+					Score:   float64(test.Score),
+					Status:  test.Info,
+					Summary: "Time: `" + fmt.Sprint(test.Time) + "`\tMemory: `" + fmt.Sprint(test.Memory) + "`\n\nInput:\n\n" + toCodeBlock(test.In) + "\n\nOutput:\n\n" + toCodeBlock(test.Out) + "\n\nResult:\n\n" + toCodeBlock(test.Res),
 				})
 			}
 			details.Jobs = append(details.Jobs, job)
