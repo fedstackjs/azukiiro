@@ -30,3 +30,7 @@ func UnzipTemp(source string, target string) (string, error) {
 	}
 	return dir, nil
 }
+
+func ToPtr[T any](v T) *T {
+	return &v
+}
