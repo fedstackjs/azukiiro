@@ -2,7 +2,6 @@ package docker
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +11,7 @@ import (
 	"github.com/fedstackjs/azukiiro/storage"
 	"github.com/fedstackjs/azukiiro/utils"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 func init() {
@@ -53,15 +53,19 @@ func (d *DockerAdapter) StartInstance(ctx context.Context, task instancer.Instan
 	}
 
 	message += "- Parse problem config"
+	viper.SetDefault("instancer.docker.startTimeout", 30)
+	viper.SetDefault("instancer.docker.domainSuffix", ".inst.localhost")
+	viper.SetDefault("instancer.docker.networkName", "caddy")
 	config := &DockerAdapterConfig{
-		StartTimeout: 10,
-		DomainSuffix: ".inst.localhost",
-		NetworkName:  "caddy",
+		StartTimeout: viper.GetInt("instancer.docker.startTimeout"),
+		DomainSuffix: viper.GetString("instancer.docker.domainSuffix"),
+		NetworkName:  viper.GetString("instancer.docker.networkName"),
 	}
-	if err := json.Unmarshal([]byte(task.ProblemConfig().Instance.Config), config); err != nil {
-		logrus.Infof("Failed to parse problem config: %v", err)
-		return updateError(err)
-	}
+	// Currently, do not load config from problem
+	// if err := json.Unmarshal([]byte(task.ProblemConfig().Instance.Config), config); err != nil {
+	// 	logrus.Infof("Failed to parse problem config: %v", err)
+	// 	return updateError(err)
+	// }
 	updateMessage()
 
 	message += "- Extract problem data"
