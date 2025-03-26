@@ -42,21 +42,21 @@ func LoadComposeProject(ctx context.Context, path string, projectName string) (*
 	return options.LoadProject(ctx)
 }
 
-func InitComposeInstance(ctx context.Context, instanceId string, path string) error {
+func InitComposeInstance(ctx context.Context, instanceId string, path string) (string, error) {
 	instancePath := filepath.Join(storage.GetRootPath(), "instances", instanceId)
 	err := os.MkdirAll(instancePath, 0700)
 	if err != nil {
-		return fmt.Errorf("failed to create instance directory: %w", err)
+		return "", fmt.Errorf("failed to create instance directory: %w", err)
 	}
 	root, err := os.OpenRoot(path)
 	if err != nil {
-		return fmt.Errorf("failed to open root: %w", err)
+		return "", fmt.Errorf("failed to open root: %w", err)
 	}
 	defer root.Close()
 	if err := os.CopyFS(instancePath, root.FS()); err != nil {
-		return fmt.Errorf("failed to copy files: %w", err)
+		return "", fmt.Errorf("failed to copy files: %w", err)
 	}
-	return nil
+	return instancePath, nil
 }
 
 func TransformComposeProject(ctx context.Context, project *types.Project, config *DockerAdapterConfig, domain string) error {
@@ -95,11 +95,11 @@ func TransformComposeProject(ctx context.Context, project *types.Project, config
 	}
 	caddy.External = true
 	caddy.Name = config.NetworkName
+	project.Networks["caddy"] = caddy
 	return nil
 }
 
-func WriteComposeProject(ctx context.Context, instanceId string, project *types.Project) error {
-	instancePath := filepath.Join(storage.GetRootPath(), "instances", instanceId)
+func WriteComposeProject(ctx context.Context, instancePath string, project *types.Project) error {
 	composePath := filepath.Join(instancePath, "compose.yml")
 
 	projectYAML, err := project.MarshalYAML()
@@ -115,7 +115,7 @@ func WriteComposeProject(ctx context.Context, instanceId string, project *types.
 	return nil
 }
 
-func StartComposeProject(ctx context.Context, instanceId string, timeout int) error {
+func StartComposeProject(ctx context.Context, instancePath string, timeout int) error {
 	execCtx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 	defer cancel()
 
@@ -123,7 +123,7 @@ func StartComposeProject(ctx context.Context, instanceId string, timeout int) er
 	args := []string{"compose", "-f", "compose.yml", "up", "-d"}
 
 	cmd := exec.CommandContext(execCtx, name, args...)
-	cmd.Dir = filepath.Join(storage.GetRootPath(), "instances", instanceId)
+	cmd.Dir = instancePath
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	if err := cmd.Run(); err != nil {

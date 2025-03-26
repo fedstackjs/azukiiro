@@ -81,15 +81,19 @@ func (d *DockerAdapter) StartInstance(ctx context.Context, task instancer.Instan
 	composeTemplateDir := filepath.Join(problemDir, "compose")
 	projectName := getProjectNameForTask(task, config)
 	projectDomain := getProjectDomainForTask(task, config)
-	project, err := LoadComposeProject(ctx, composeTemplateDir, projectName)
-	if err != nil {
+	if _, err = LoadComposeProject(ctx, composeTemplateDir, projectName); err != nil {
 		logrus.Infof("Failed to load Docker Compose project: %v", err)
 		return updateError(err)
 	}
 	updateMessage()
 
 	message += "- Initialize Docker Compose Instance"
-	err = InitComposeInstance(ctx, task.InstanceId(), composeTemplateDir)
+	instancePath, err := InitComposeInstance(ctx, task.InstanceId(), composeTemplateDir)
+	if err != nil {
+		logrus.Infof("Failed to initialize Docker Compose instance: %v", err)
+		return updateError(err)
+	}
+	project, err := LoadComposeProject(ctx, instancePath, projectName)
 	if err != nil {
 		logrus.Infof("Failed to initialize Docker Compose instance: %v", err)
 		return updateError(err)
@@ -105,7 +109,7 @@ func (d *DockerAdapter) StartInstance(ctx context.Context, task instancer.Instan
 	updateMessage()
 
 	message += "- Write Docker Compose Project"
-	err = WriteComposeProject(ctx, task.InstanceId(), project)
+	err = WriteComposeProject(ctx, instancePath, project)
 	if err != nil {
 		logrus.Infof("Failed to write Docker Compose project: %v", err)
 		return updateError(err)
@@ -113,7 +117,7 @@ func (d *DockerAdapter) StartInstance(ctx context.Context, task instancer.Instan
 	updateMessage()
 
 	message += "- Start Docker Compose Project"
-	err = StartComposeProject(ctx, task.InstanceId(), config.StartTimeout)
+	err = StartComposeProject(ctx, instancePath, config.StartTimeout)
 	if err != nil {
 		logrus.Infof("Failed to start Docker Compose project: %v", err)
 		return updateError(err)
