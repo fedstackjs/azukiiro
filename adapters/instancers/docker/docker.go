@@ -19,9 +19,10 @@ func init() {
 }
 
 type DockerAdapterConfig struct {
-	StartTimeout int    `json:"startTimeout"`
-	DomainSuffix string `json:"domainSuffix"`
-	NetworkName  string `json:"networkName"`
+	StartTimeout      int    `json:"startTimeout"`
+	DomainSuffix      string `json:"domainSuffix"`
+	NetworkName       string `json:"networkName"`
+	HostInstancesPath string `json:"hostInstancesPath"`
 }
 
 type DockerAdapter struct{}
@@ -56,10 +57,12 @@ func (d *DockerAdapter) StartInstance(ctx context.Context, task instancer.Instan
 	viper.SetDefault("instancer.docker.startTimeout", 30)
 	viper.SetDefault("instancer.docker.domainSuffix", ".inst.localhost")
 	viper.SetDefault("instancer.docker.networkName", "caddy")
+	viper.SetDefault("instancer.docker.hostInstancesPath", filepath.Join(storage.GetRootPath(), "instances"))
 	config := &DockerAdapterConfig{
-		StartTimeout: viper.GetInt("instancer.docker.startTimeout"),
-		DomainSuffix: viper.GetString("instancer.docker.domainSuffix"),
-		NetworkName:  viper.GetString("instancer.docker.networkName"),
+		StartTimeout:      viper.GetInt("instancer.docker.startTimeout"),
+		DomainSuffix:      viper.GetString("instancer.docker.domainSuffix"),
+		NetworkName:       viper.GetString("instancer.docker.networkName"),
+		HostInstancesPath: viper.GetString("instancer.docker.hostInstancesPath"),
 	}
 	// Currently, do not load config from problem
 	// if err := json.Unmarshal([]byte(task.ProblemConfig().Instance.Config), config); err != nil {
@@ -81,7 +84,8 @@ func (d *DockerAdapter) StartInstance(ctx context.Context, task instancer.Instan
 	composeTemplateDir := filepath.Join(problemDir, "compose")
 	projectName := getProjectNameForTask(task, config)
 	projectDomain := getProjectDomainForTask(task, config)
-	if _, err = LoadComposeProject(ctx, composeTemplateDir, projectName); err != nil {
+	project, err := LoadComposeProject(ctx, config, task.InstanceId(), composeTemplateDir, projectName)
+	if err != nil {
 		logrus.Infof("Failed to load Docker Compose project: %v", err)
 		return updateError(err)
 	}
@@ -89,11 +93,6 @@ func (d *DockerAdapter) StartInstance(ctx context.Context, task instancer.Instan
 
 	message += "- Initialize Docker Compose Instance"
 	instancePath, err := InitComposeInstance(ctx, task.InstanceId(), composeTemplateDir)
-	if err != nil {
-		logrus.Infof("Failed to initialize Docker Compose instance: %v", err)
-		return updateError(err)
-	}
-	project, err := LoadComposeProject(ctx, instancePath, projectName)
 	if err != nil {
 		logrus.Infof("Failed to initialize Docker Compose instance: %v", err)
 		return updateError(err)

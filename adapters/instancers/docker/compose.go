@@ -15,7 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func LoadComposeProject(ctx context.Context, path string, projectName string) (*types.Project, error) {
+func LoadComposeProject(ctx context.Context, config *DockerAdapterConfig, instanceId string, path string, projectName string) (*types.Project, error) {
 	fileInfo, err := os.Stat(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to access path %s: %w", path, err)
@@ -30,9 +30,10 @@ func LoadComposeProject(ctx context.Context, path string, projectName string) (*
 		return nil, fmt.Errorf("no compose.yml found in directory %s", path)
 	}
 
+	hostInstancePath := filepath.Join(config.HostInstancesPath, instanceId)
 	options, err := cli.NewProjectOptions(
 		[]string{composePath},
-		cli.WithWorkingDirectory(path),
+		cli.WithWorkingDirectory(hostInstancePath),
 		cli.WithName(projectName),
 	)
 	if err != nil {
@@ -42,13 +43,13 @@ func LoadComposeProject(ctx context.Context, path string, projectName string) (*
 	return options.LoadProject(ctx)
 }
 
-func InitComposeInstance(ctx context.Context, instanceId string, path string) (string, error) {
+func InitComposeInstance(ctx context.Context, instanceId string, templatePath string) (string, error) {
 	instancePath := filepath.Join(storage.GetRootPath(), "instances", instanceId)
 	err := os.MkdirAll(instancePath, 0700)
 	if err != nil {
 		return "", fmt.Errorf("failed to create instance directory: %w", err)
 	}
-	root, err := os.OpenRoot(path)
+	root, err := os.OpenRoot(templatePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to open root: %w", err)
 	}
