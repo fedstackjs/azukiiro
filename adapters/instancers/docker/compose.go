@@ -121,7 +121,8 @@ func StartComposeProject(ctx context.Context, instancePath string, timeout int) 
 	defer cancel()
 
 	name := "docker"
-	args := []string{"compose", "-f", "compose.yml", "up", "-d"}
+	// Only use pre-downloaded image for security reasons
+	args := []string{"compose", "-f", "compose.yml", "up", "-d", "--no-build", "--pull", "never", "--remove-orphans"}
 
 	cmd := exec.CommandContext(execCtx, name, args...)
 	cmd.Dir = instancePath
@@ -136,7 +137,7 @@ func StartComposeProject(ctx context.Context, instancePath string, timeout int) 
 
 func StopComposeProject(ctx context.Context, instanceId string) error {
 	name := "docker"
-	args := []string{"compose", "-f", "compose.yml", "down"}
+	args := []string{"compose", "-f", "compose.yml", "down", "-v", "--remove-orphans"}
 
 	cmd := exec.CommandContext(ctx, name, args...)
 	cmd.Dir = filepath.Join(storage.GetRootPath(), "instances", instanceId)
