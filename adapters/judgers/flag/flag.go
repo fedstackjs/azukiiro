@@ -8,6 +8,7 @@ import (
 
 	"github.com/fedstackjs/azukiiro/common"
 	"github.com/fedstackjs/azukiiro/judge"
+	"github.com/fedstackjs/azukiiro/utils"
 )
 
 func init() {
@@ -30,14 +31,19 @@ type FlagAnswer struct {
 
 func (g *FlagAdapter) Judge(ctx context.Context, task judge.JudgeTask) error {
 	config := task.Config()
-	solutionData := task.SolutionData()
 
 	adapterConfig := FlagAdapterConfig{}
 	if err := json.Unmarshal([]byte(config.Judge.Config), &adapterConfig); err != nil {
 		return err
 	}
 
-	answerPath := filepath.Join(solutionData, "answer.json")
+	solutionDir, err := utils.UnzipTemp(task.SolutionData(), "solution-*")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(solutionDir)
+
+	answerPath := filepath.Join(solutionDir, "answer.json")
 	answer, err := os.ReadFile(answerPath)
 	if err != nil {
 		task.Update(ctx, &common.SolutionInfo{
