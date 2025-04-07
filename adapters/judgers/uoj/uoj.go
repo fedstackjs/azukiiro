@@ -159,7 +159,7 @@ func ReadResult(resultDir string, problemConf map[string]string) (common.Solutio
 	resultStr := string(resultFile)
 	resultStr = strings.ToValidUTF8(resultStr, "")
 	resultStr = strings.Map(func(r rune) rune {
-		if unicode.IsGraphic(r) || unicode.IsSpace(r) || r == '\r' || r == '\n' {
+		if unicode.IsGraphic(r) || r == ' ' || r == '\t' || r == '\r' || r == '\n' {
 			return r
 		}
 		return -1
