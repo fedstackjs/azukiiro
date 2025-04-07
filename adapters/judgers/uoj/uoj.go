@@ -158,13 +158,16 @@ func ReadResult(resultDir string, problemConf map[string]string) (common.Solutio
 	}
 	resultStr := string(resultFile)
 	resultStr = strings.ToValidUTF8(resultStr, "")
-	resultStr = strings.TrimFunc(resultStr, func(r rune) bool {
-		return !(unicode.IsGraphic(r) || unicode.IsSpace(r) || r == '\r' || r == '\n')
-	})
+	resultStr = strings.Map(func(r rune) rune {
+		if unicode.IsGraphic(r) || unicode.IsSpace(r) || r == '\r' || r == '\n' {
+			return r
+		}
+		return -1
+	}, resultStr)
 
 	var result Result
 	if err := xml.Unmarshal([]byte(resultStr), &result); err != nil {
-		return GenerateErrorResult(fmt.Errorf("failed to parse UOJ result:\n\n%v\n\n%s", err, string(resultFile)))
+		return GenerateErrorResult(fmt.Errorf("failed to parse UOJ result:\n\n%v\n\n%s", err, resultStr))
 	}
 
 	info := common.SolutionInfo{
