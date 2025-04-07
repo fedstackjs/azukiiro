@@ -13,6 +13,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/fedstackjs/azukiiro/common"
 	"github.com/fedstackjs/azukiiro/judge"
@@ -155,9 +156,14 @@ func ReadResult(resultDir string, problemConf map[string]string) (common.Solutio
 	if err != nil {
 		return GenerateErrorResult(fmt.Errorf("failed to read UOJ result"))
 	}
+	resultStr := string(resultFile)
+	resultStr = strings.ToValidUTF8(resultStr, "")
+	resultStr = strings.TrimFunc(resultStr, func(r rune) bool {
+		return !(unicode.IsGraphic(r) || unicode.IsSpace(r) || r == '\r' || r == '\n')
+	})
 
 	var result Result
-	if err := xml.Unmarshal([]byte(strings.ToValidUTF8(string(resultFile), "")), &result); err != nil {
+	if err := xml.Unmarshal([]byte(resultStr), &result); err != nil {
 		return GenerateErrorResult(fmt.Errorf("failed to parse UOJ result:\n\n%v\n\n%s", err, string(resultFile)))
 	}
 
