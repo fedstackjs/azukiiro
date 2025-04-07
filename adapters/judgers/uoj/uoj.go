@@ -95,6 +95,15 @@ func errorDetails(err error) string {
 	return fmt.Sprintf("Error Details:\n\n%s", toCodeBlock(err))
 }
 
+func errorMsg(err error) string {
+	if err == nil {
+		return ""
+	}
+	str := fmt.Sprintf("%s", err)
+	parts := strings.SplitN(str, ":", 2)
+	return strings.TrimSpace(parts[0])
+}
+
 func testsToJob(subtask Subtask, problemConf map[string]string) (*common.SolutionDetailsJob, error) {
 	str, ok := problemConf[fmt.Sprintf("subtask_score_%d", subtask.Num)]
 	if !ok {
@@ -131,7 +140,7 @@ func GenerateErrorResult(err error) (common.SolutionInfo, common.SolutionDetails
 				"mem": 0,
 			},
 			Status:  "Judge Error",
-			Message: fmt.Sprintf("%s", err),
+			Message: errorMsg(err),
 		}, common.SolutionDetails{
 			Version: 1,
 			Jobs:    nil,
