@@ -149,7 +149,7 @@ func ReadResult(resultDir string, problemConf map[string]string) (common.Solutio
 
 	var result Result
 	if err := xml.Unmarshal(resultFile, &result); err != nil {
-		return GenerateErrorResult(fmt.Errorf("failed to parse UOJ result"))
+		return GenerateErrorResult(fmt.Errorf("failed to parse UOJ result:\n\n%s", string(resultFile)))
 	}
 
 	info := common.SolutionInfo{
